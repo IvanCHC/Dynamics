@@ -8,7 +8,8 @@ setup(name='dynamics',
       license='LICENSE',
       keywords='simulation',
       package =[
-          '',
+          '.',
+          'dynamics',
       ],
       install_requires=[
           'numpy',
