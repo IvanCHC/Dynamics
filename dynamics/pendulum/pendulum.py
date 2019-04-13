@@ -154,6 +154,8 @@ class Pendulum(object):
             omega_results[:][i] = omega[i] 
             alpha_results[:][i] = -self.mu * omega[i] - self.g/self.l * np.sin(theta)        
         self.result_phase = {
+            "theta_input" : theta,
+            "omega_input" : omega,
             "omega" : omega_results,
             "alpha" : alpha_results
         }
