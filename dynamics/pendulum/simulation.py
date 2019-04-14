@@ -1,10 +1,14 @@
+"""
+Author: Ivan (Chon-Hou) Chan
+This is the full simulation of simple pendulum model.
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-from dynamics.pendulum.pendulum import Pendulum
+from dynamics.pendulum.src.pendulum import Pendulum
 
 # Construct simulation object
-simulation = Pendulum(mu=0.1, l=1, time_step=1e-3)
+simulation = Pendulum(mu=0.1, l=1, time_step=5e-4)
 
 # Run simulation
 simulation.setup(theta_init=2, omeega_init=1)
@@ -24,12 +28,12 @@ y = -length * np.cos(theta)
 fig = plt.figure(figsize=(14,8))
 
 # Set up simulation subplot
-ax = fig.add_subplot(121, autoscale_on=True, xlim=(-1.2, 1.2),
-                     ylim=(-1.2, 1.2), aspect='equal')
-support, = ax.plot([0, 0], [-1.2, 0], 'k--', lw=1)
+ax = fig.add_subplot(121, autoscale_on=True, xlim=(-1.2*length, 1.2*length),
+                     ylim=(-1.2*length, 1.2*length), aspect='equal')
+support, = ax.plot([0, 0], [-1.2*length, 0], 'k--', lw=1)
 position, = ax.plot([], [], 'o-', lw=2)
 path, = ax.plot([], [], 'k-.', lw=1)
-direction = ax.quiver([0], [0], [1e-16], [1e-16], cmap='jet', scale=1)
+direction = ax.quiver([0], [0], [1e-16], [1e-16], color='maroon', scale=1)
 
 
 # Set up the messages on the simulation plot
@@ -101,7 +105,7 @@ def animate(i):
            time_text, theta_text, omega_text, direction
 
 # Define animation object
-ani = animation.FuncAnimation(fig, animate, np.arange(1, len(y), 6),
+ani = animation.FuncAnimation(fig, animate, np.arange(1, len(y), 12),
                               interval=0, blit=True, init_func=init)
 
 plt.show()

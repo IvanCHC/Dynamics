@@ -7,7 +7,7 @@ pendulum simulation.
 import numpy as np
 import matplotlib.pyplot as plt
 import pylab as p
-from dynamics.pendulum.pendulum import Pendulum
+from dynamics.pendulum.src.pendulum import Pendulum
 
 # Construct simulation object
 simulation = Pendulum(mu=0.1, l=1)
