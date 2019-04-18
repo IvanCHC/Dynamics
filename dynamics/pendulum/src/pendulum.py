@@ -84,7 +84,7 @@ class Pendulum(object):
         self.result = {}
 
     def setup(self, mu=None, l=None, theta_init=None,
-              omeega_init=None, theta_low=None, theta_up=None,
+              omega_init=None, theta_low=None, theta_up=None,
               omega_low=None, omega_up=None, resolution=None):
         "Method to reinitialise parameters."
         if mu is not None:
@@ -93,8 +93,8 @@ class Pendulum(object):
             self.l = l
         if theta_init is not None:
             self.theta_init = theta_init
-        if omeega_init is not None:
-            self.omega_init = omeega_init
+        if omega_init is not None:
+            self.omega_init = omega_init
         if theta_low is not None:
             theta_low = self.theta_low
         if theta_up is not None:

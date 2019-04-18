@@ -14,7 +14,7 @@ from dynamics.pendulum.src.pendulum import Pendulum
 model = Pendulum(mu=0.0, l=1, time_step=4e-4, terminal_condidtion=30)
 
 # Set up a range of initial theta
-theta_init = np.linspace(-2.7, 2.7, 5)
+theta_init = np.linspace(0.0, 2.7, 5)
 
 # Initialise variables
 simulation = {}
@@ -26,7 +26,7 @@ length = {}
 # Run simulation
 for i in range(len(theta_init)):
     simulation[i] = copy.deepcopy(model)
-    simulation[i].setup(theta_init=theta_init[i], omeega_init=0)
+    simulation[i].setup(theta_init=theta_init[i], omega_init=0)
     simulation[i].run()
 
 # Exact theta and other parameters from the simulation

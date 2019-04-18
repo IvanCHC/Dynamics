@@ -8,10 +8,10 @@ import matplotlib.animation as animation
 from dynamics.pendulum.src.pendulum import Pendulum
 
 # Construct simulation object
-simulation = Pendulum(mu=0.1, l=1, time_step=5e-4)
+simulation = Pendulum(mu=0.1, l=1, terminal_condidtion=15, time_step=1e-4)
 
 # Run simulation
-simulation.setup(theta_init=2, omeega_init=1)
+simulation.setup(theta_init=2.9, omega_init=0)
 simulation.run()
 
 # Exact theta and other parameters from the simulation
@@ -105,7 +105,7 @@ def animate(i):
            time_text, theta_text, omega_text, direction
 
 # Define animation object
-ani = animation.FuncAnimation(fig, animate, np.arange(1, len(y), 12),
+ani = animation.FuncAnimation(fig, animate, np.arange(1, len(y), 600),
                               interval=0, blit=True, init_func=init)
 
 plt.show()
