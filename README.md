@@ -1,7 +1,15 @@
 # Dynamics
-Simulation of dynamic systems using numerical methods, the results is visualised by animation and other forms of graphical representation.
+Simulation of dynamic systems using numerical methods, the results are visualised by animation and other forms of graphical representation.
 
 ## Simple Pendulum
-<p> This is a simulation of a pendulum using ordinary differenctial equation derived from the Lagrangian mechanics.<br/>
+This is a simulation of a pendulum using ordinary differenctial equation derived from the Lagrangian mechanics.<br/>
 The motion of the pendulum can be descibed using a 2nd order differential equation:<br/>
+<br/>
+<p align="center">
+    <img src="./assets/images/Eqn_Simple_Pendulum.png?raw=true" width="200" height="50">
+</p>
+The system of 1st order equations is generated and used for the simulation of pendulum:<br/>
+<br/>
+<p align="center">
+    <img src="./assets/images/Eqn_1ord_Sys_Sim_Pen.png?raw=true" width="300" height="70"> <br/>
 </p>
