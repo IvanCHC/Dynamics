@@ -11,7 +11,7 @@ import matplotlib.animation as animation
 from dynamics.pendulum.src.pendulum import Pendulum
 
 # Construct simulation object
-model = Pendulum(mu=0.0, l=1, time_step=4e-4, terminal_condidtion=30)
+model = Pendulum(mu=0.0, l=1, time_step=4e-4, terminal_condition=30)
 
 # Set up a range of initial theta
 theta_init = np.linspace(0.0, 2.7, 5)

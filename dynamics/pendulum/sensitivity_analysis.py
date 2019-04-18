@@ -11,7 +11,7 @@ import matplotlib.animation as animation
 from dynamics.pendulum.src.pendulum import Pendulum
 
 # Construct simulation object
-simulation = Pendulum(mu=0.0, l=1, terminal_condidtion=30, time_step=1e-5)
+simulation = Pendulum(mu=0.0, l=1, terminal_condition=30, time_step=1e-5)
 
 # Run simulation and phase portait evaluation
 simulation.setup(theta_init=np.pi-1, omega_init=0)

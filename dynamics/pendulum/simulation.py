@@ -8,7 +8,7 @@ import matplotlib.animation as animation
 from dynamics.pendulum.src.pendulum import Pendulum
 
 # Construct simulation object
-simulation = Pendulum(mu=0.1, l=1, terminal_condidtion=15, time_step=1e-4)
+simulation = Pendulum(mu=0.1, l=1, terminal_condition=15, time_step=1e-4)
 
 # Run simulation
 simulation.setup(theta_init=2.9, omega_init=0)
@@ -34,7 +34,6 @@ support, = ax.plot([0, 0], [-1.2*length, 0], 'k--', lw=1)
 position, = ax.plot([], [], 'o-', lw=2)
 path, = ax.plot([], [], 'k-.', lw=1)
 direction = ax.quiver([0], [0], [1e-16], [1e-16], color='maroon', scale=1)
-
 
 # Set up the messages on the simulation plot
 time_message = 'time = %.2fs'

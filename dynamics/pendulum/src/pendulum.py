@@ -60,13 +60,13 @@ class Pendulum(object):
     def __init__(self, mu=0, l=constants.g, time_step=1e-3,
                 theta_init=0, omeega_init=0, resolution=0.1,
                 theta_up=15, theta_low=-15, omega_up=10,
-                omega_low=-10, terminal_condidtion=100):
+                omega_low=-10, terminal_condition=100):
         "Constructor to initialise parameters."
         # Initialise Inputs
         self.mu = mu
         self.l = l
         self.time_step = time_step
-        self.terminal_condidtion = terminal_condidtion
+        self.terminal_condition = terminal_condition
         self.resolution = resolution
         self.theta_init = theta_init
         self.omega_init = omeega_init
@@ -113,9 +113,9 @@ class Pendulum(object):
         theta_init = self.theta_init
         omega_init = self.omega_init
         time_step = self.time_step
-        terminal_condidtion = self.terminal_condidtion
+        terminal_condition = self.terminal_condition
 
-        time = np.arange(0, terminal_condidtion, time_step)
+        time = np.arange(0, terminal_condition, time_step)
 
         # Initialise outputs arrays 
         theta = np.ones(len(time)) * theta_init
