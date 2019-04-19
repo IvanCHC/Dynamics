@@ -22,7 +22,7 @@ length = simulation.l
 
 # Calculate the postion of the pendulum
 x = length * np.sin(theta)
-y = -length * np.cos(theta)
+y = -1 * length * np.cos(theta)
 
 # Set up for the figure
 fig = plt.figure(figsize=(14,8))
