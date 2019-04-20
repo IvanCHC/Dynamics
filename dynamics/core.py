@@ -66,22 +66,6 @@ class Problem(object):
     def setup(self):
         raise NotImplementedError("method is not implemented.")
 
-
-class Component(object):
-    """
-    This class is an abstract class, which creates component
-    objects for the simulation.
-
-        Attribute:
-            create: callable
-                method to component object.
-    """
-    
-    def __init__(self, **kwargs):
-        """Create a new component."""
-        super().__init__(**kwargs)
-
-
 class DynamicModel(object):
     """
     This is the top level abstract class, which encapsulates
@@ -157,11 +141,23 @@ class DynamicModel(object):
         return results
 
     @abstractmethod
-    def calc_mass_matrix(self):
+    def calc_mass_matrix(self, displacement, velocity):
         raise NotImplementedError("method is not implemented.")
 
     @abstractmethod
-    def calc_reaction_matrix(self):
+    def calc_reaction_matrix(self, displacement, velocity):
         raise NotImplementedError("method is not implemented.")
-    
 
+class Component(object):
+    """
+    This class is an abstract class, which creates component
+    objects for the simulation.
+
+        Attribute:
+            create: callable
+                method to component object.
+    """
+    
+    def __init__(self, **kwargs):
+        """Create a new component."""
+        super().__init__(**kwargs)

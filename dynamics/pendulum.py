@@ -41,4 +41,8 @@ if __name__ == "__main__":
     problem.setup()
 
     simulation = PendulumModel(problem)
-    simulation.run()
+    result = simulation.run()
+
+    import matplotlib.pyplot as plt
+    plt.plot(result['time'], result['displacement'][0])
+    plt.show()
