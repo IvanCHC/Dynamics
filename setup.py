@@ -14,6 +14,8 @@ setup(name='dynamics',
       install_requires=[
           'numpy',
           'scipy',
-          'matplotlib',      
+          'matplotlib',
+          'pyqt5',
+          'pyqtgraph'      
       ],
     )
