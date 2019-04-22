@@ -5,6 +5,7 @@ This is a numerical solution of double pendulum.
 import numpy as np
 from dynamics.core import Problem, DynamicModel
 from dynamics.component import Mass, String
+from dynamics.solver import *
 
 class DoublePendulumProblem(Problem):
     """Extended Class from Problem class."""
@@ -61,11 +62,18 @@ if __name__ == "__main__":
     
     problem = DoublePendulumProblem()
     problem.initialise(dof=2, initial_displacement=[2.7, -1.5],
-        initial_velocity=[0, 0], time_step=1e-4, time_end=30,
+        initial_velocity=[0, 0], time_step=100e-4, time_end=15,
         reference_point=(0,0))
     problem.setup()
 
-    simulation = DoublePendulumModel(problem)
+
+    solver = RungeKuttafour()
+
+    simulation = DoublePendulumModel(problem, solver)
+    
+    simulation.problem.connection_1.length = 3
+    simulation.problem.connection_2.length = 3
+    
     result = simulation.run()
 
     import matplotlib.pyplot as plt

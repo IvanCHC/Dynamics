@@ -93,15 +93,18 @@ class DynamicModel(object):
     
     __metaclass__ = ABCMeta
 
-    def __init__(self, problem):
+    def __init__(self, problem, solver):
         """Construct the dynamic model."""
         self.problem = problem
+        self.solver = solver
 
     def run(self):
         """Method to run the simulation."""
         
         # construct problem variable
         problem = self.problem
+        # construct solver variable
+        solver = self.solver
 
         # construct time array
         time = np.arange(0, problem.time_end, problem.time_step)
@@ -116,21 +119,10 @@ class DynamicModel(object):
 
         # Results evaluation
         for i in range(len(time_step)):
-            # Evaluate equivalent mass matrix
-            M = self.calc_mass_matrix(displacement[:,i], velocity[:,i])
-            # Evaluate equivalent reaction matrix 
-            R = self.calc_reaction_matrix(displacement[:,i], velocity[:,i])
-
-            # Calculate the invert of equivalent mass matrix
-            if problem.dof > 1:
-                M_inverted = np.linalg.inv(M)
-            else:
-                M_inverted = [M**-1]
 
             # Calculate the theta and omega for the next time step
-            for j in range(problem.dof):
-                displacement[j][i+1] = displacement[j][i] + velocity[j][i] * time_step[i]
-                velocity[j][i+1] = velocity[j][i] + np.dot(M_inverted[j], R) * time_step[i]
+            displacement[:,i+1], velocity[:,i+1] = solver.solve(displacement[:,i], 
+                velocity[:,i], self.calc_acceleration, time_step[i], problem.dof)
 
         results = {
             "time" : time,
@@ -139,6 +131,33 @@ class DynamicModel(object):
         }
         
         return results
+
+    def calc_acceleration(self, displacement, velocity, dof):
+        """
+        This method is used to calculate the acceleration of the system.
+
+            Parameter:
+                displacement: (Input) float
+                    The initial displacement of the model.
+                velocity: (Input) float
+                    The initial velocity of the model.
+                dof: int
+                    The degree of freedom of the system.
+                i: int
+                    The current body "degree of freedom" is evaluation.
+        """
+        # Evaluate equivalent mass matrix
+        M = self.calc_mass_matrix(displacement, velocity)
+        # Evaluate equivalent reaction matrix 
+        R = self.calc_reaction_matrix(displacement, velocity)
+
+        # Calculate the invert of equivalent mass matrix
+        if dof > 1:
+            M_inverted = np.linalg.inv(M)
+        else:
+            M_inverted = [M**-1]
+
+        return np.dot(M_inverted, R) 
 
     @abstractmethod
     def calc_mass_matrix(self, displacement, velocity):
@@ -152,12 +171,25 @@ class Component(object):
     """
     This class is an abstract class, which creates component
     objects for the simulation.
-
-        Attribute:
-            create: callable
-                method to component object.
     """
     
     def __init__(self, **kwargs):
         """Create a new component."""
         super().__init__(**kwargs)
+
+class Solver(object):
+    """
+    This class is an abstract class, which is the numerical solver
+    for the simulation.
+    """
+
+    __metaclass__ = ABCMeta
+
+    def __init__(self, **kwargs):
+        """Construct the solver object."""
+        super().__init__(**kwargs)
+
+    @abstractmethod
+    def solve(self):
+        raise NotImplementedError("method is not implemented.")
+        
