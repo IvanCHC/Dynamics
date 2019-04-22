@@ -5,6 +5,7 @@ This is a numerical solution of pendulum.
 import numpy as np
 from dynamics.core import Problem, DynamicModel
 from dynamics.component import Mass, String
+from dynamics.solver import *
 
 class PendulumProblem(Problem):
     """Extended Class from Problem class."""
@@ -36,11 +37,13 @@ if __name__ == "__main__":
     
     problem = PendulumProblem()
     problem.initialise(dof=1, initial_displacement=[2.7],
-        initial_velocity=[0], time_step=1e-4, time_end=30,
+        initial_velocity=[0], time_step=1e-3, time_end=30,
         reference_point=(0,0))
     problem.setup()
 
-    simulation = PendulumModel(problem)
+    solver = RungeKuttatwo()
+
+    simulation = PendulumModel(problem, solver)
     result = simulation.run()
 
     import matplotlib.pyplot as plt
