@@ -16,6 +16,7 @@ setup(name='dynamics',
           'scipy',
           'matplotlib',
           'pyqt5',
-          'pyqtgraph'      
+          'pyqtgraph',
+          'sympy'
       ],
     )

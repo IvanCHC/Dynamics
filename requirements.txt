@@ -1,5 +1,6 @@
 numpy
 scipy
+sympy
 matplotlib
 pyqt5 == 5.12
 pyqtgraph

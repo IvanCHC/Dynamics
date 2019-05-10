@@ -2,7 +2,6 @@
 Author: Ivan (Chon-Hou) Chan
 This is the numerical solver for the dynamic system.
 """
-import numpy as np
 from dynamics.core import Solver
 
 class Euler(Solver):
@@ -56,13 +55,13 @@ class RungeKuttaTwo(Solver):
         acc = acceleration(displacement, velocity, dof)
         k1_velo = time_step * acc
 
-        # Calculate teh value of k2 for displacement          
+        # Calculate teh value of k2 for displacement
         k2_disp = time_step * (velocity + k1_velo/2)
 
         # Calculate the value of k2 for velocity
         acc = acceleration(displacement+k1_disp/2, velocity+k1_velo/2, dof)
         k2_velo = time_step * acc
-        
+
         # Evaluate the displacement and velocity for the next time step
         displacement = displacement + k2_disp + time_step**3
         velocity = velocity + k2_velo + time_step**3
@@ -87,21 +86,21 @@ class RungeKuttaFour(Solver):
         acc = acceleration(displacement+k1_disp/2, velocity+k1_velo/2, dof)
         k2_velo = time_step * acc
 
-        # Calculate teh value of k2 for displacement          
+        # Calculate teh value of k2 for displacement
         k2_disp = time_step * (velocity + k1_velo/2)
-        
+
         # Calculate the value of k3 for velocity
         acc = acceleration(displacement+k2_disp/2, velocity+k2_velo/2, dof)
         k3_velo = time_step * acc
 
-        # Calculate teh value of k3 for displacement          
+        # Calculate teh value of k3 for displacement
         k3_disp = time_step * (velocity + k2_velo/2)
 
         # Calculate the value of k4 for velocity
         acc = acceleration(displacement+k3_disp, velocity+k3_velo, dof)
         k4_velo = time_step * acc
 
-        # Calculate teh value of k4 for displacement          
+        # Calculate teh value of k4 for displacement
         k4_disp = time_step * (velocity + k3_velo)
 
         # Evaluate the displacement and velocity for the next time step
@@ -110,8 +109,7 @@ class RungeKuttaFour(Solver):
 
         return displacement, velocity
 
-class RungeKuttaFehlberg(Solver):
-    """
-    RKF45 Runge Kutta Fehlberg solver, TODO(Ivan): implement variable time step.
-    """
-    pass
+# class RungeKuttaFehlberg(Solver):
+#     """
+#     RKF45 Runge Kutta Fehlberg solver, TODO(Ivan): implement variable time step.
+#     """
