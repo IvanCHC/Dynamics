@@ -5,9 +5,8 @@ different modules: Model, Simulation, Components and
 Solver.
 """
 from abc import ABCMeta, abstractmethod
-# import numpy as np
-# from scipy import constants
-# import sympy
+from collections import defaultdict
+from scipy.constants import g
 
 class Model:
     """
@@ -24,6 +23,8 @@ class Model:
             a tuple `(component, kwargs, component_name)` or an class `component`.
             Whereas, if the component is the class attribute, component name is the name
             of the component and the kwargs are the user define settings for the components.
+        g: tuple
+            The acceleration due to gravity.
         reference: tuple
             Co-ordinate of the reference component, the default value is (0, 0, 0).
     """
@@ -35,16 +36,37 @@ class Model:
                  reference=(0, 0, 0)):
         self.components = components if isinstance(components, list) else [components]
         self.reference = reference
+        self.g = (0, 0, -g)
 
     @abstractmethod
     def setup(self):
-        "Setup"
+        "Setup of the dynamic model."
         raise NotImplementedError("Method is not implemented.")
 
-    @abstractmethod
-    def build(self):
-        "Build"
-        raise NotImplementedError("Method is not implemented.")
+    def build_component(self, part):
+        "Method to construct the component."
+        if isinstance(part, tuple):
+            # Extract component class
+            component = part[0]
+
+            # Extract componet kwargs
+            if len(part) >= 2:
+                kwargs = part[1]
+            else:
+                kwargs = {}
+
+            # Extract component component name
+            if len(part) >= 3:
+                component_name = part[2]
+            else:
+                component_name = component.__name__
+
+        else:
+            component = part
+            kwargs = {}
+            component_name = component.__name__
+
+        return component(name=component_name, **kwargs)
 
 
 class Simulation:
@@ -88,13 +110,16 @@ class Component:
     Attributes:
     -----------
     properties: dict
-            The dictionart of properties for the component object.
+        The dictionart of properties for the component object.
+    name: string
+        The name of the component.
     """
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, **kwargs):
-        self.properties = {}
+    def __init__(self, name=None):
+        self._name = name
+        self.properties = defaultdict()
         self.define_properties()
 
     @abstractmethod
@@ -106,6 +131,17 @@ class Component:
         "Method to update properties of the component."
         for key, value in kwargs.items():
             self.properties[key] = value
+
+    @property
+    def name(self):
+        "Call the name property of the component."
+        return self._name
+
+    @length.setter
+    def name(self, value):
+        "Update the name property of the component."
+        self._name = value
+        self.update_properties(**{"name": self.name})
 
 class Solver:
     """

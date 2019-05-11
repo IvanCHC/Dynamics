@@ -10,6 +10,7 @@ setup(name='dynamics',
       package =[
           '.',
           'dynamics',
+          'utils',
       ],
       install_requires=[
           'numpy',
