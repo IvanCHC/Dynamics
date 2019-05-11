@@ -1,100 +1,110 @@
 """
 Author: Ivan (Chon-Hou) Chan
-This is the component constructor, which creates components for simulations.
+This is the components constructor, coomponent can classified as
+mass, connection and support.
 """
-import numpy as np
 from dynamics.core import Component
 
 class Mass(Component):
     """
-    Mass object, which is the main mass body for the simulation.
+    Mass object, which is the mass body for the simulation.
 
-        Attribute:
-            _mass: float
-                The mass (weight) of the mass object.
+    Attributes:
+    -----------
+        mass: float
+            The mass (weight) of the mass body.
+        drag_coeff: float
+            The coefficient of drag of the mass body.
     """
 
     def __init__(self, mass=1, drag_coeff=0, **kwargs):
-        """Create a new mass component."""
-        super().__init__(**kwargs)
         self._mass = mass
         self._drag_coeff = drag_coeff
+        super().__init__(**kwargs)
+
+    def define_properties(self):
+        "Method to define properties."
+        self.properties = {"mass": self.mass,
+                           "drag_coeff": self.drag_coeff}
 
     @property
     def mass(self):
+        "Call the mass property of the body."
         return self._mass
 
     @mass.setter
     def mass(self, value):
+        "Update the mass property of the body."
         self._mass = value
+        self.update_properties(**{"mass": self.mass})
 
     @property
     def drag_coeff(self):
+        "Call the drag coefficient property of the body."
         return self._drag_coeff
-    
+
     @drag_coeff.setter
     def drag_coeff(self, value):
+        "Update the drag coefficient property of the body."
         self._drag_coeff = value
+        self.update_properties(**{"drag_coeff": self.drag_coeff})
 
-class String(Component):
+
+class Conenction(Component):
     """
-    Connection object, which is used to connect the main mass bodies together
-    for the simulation, this connection objection is assumed to be massless,
-    and with infinite stiffness.
+    Connection object, which is the coneection between parts (components).
 
-        Attribute:
-            _length: float
-                The length of the connection.
-            _drag_coeff: float
-                The drag coefficient of the connection.
+    Attributes:
+    -----------
+        length: float
+            The length of the connection.
     """
 
-    def __init__(self, length=1, *args, **kwargs):
-        """Create a new string component."""
-        super().__init__(*args, **kwargs)
+    def __init__(self, length=1, **kwargs):
         self._length = length
+        super().__init__(**kwargs)
+
+    def define_properties(self):
+        "Method to define properties."
+        self.properties = {"length": self.length}
 
     @property
     def length(self):
+        "Call the length property of the connection."
         return self._length
 
     @length.setter
     def length(self, value):
+        "Update the length property of the connection."
         self._length = value
 
-class SpringDamper(String):
-    """
-    This is the extension of String class. However, this connection component
-    is assumed to have stiffness constant and damping coefficient.
 
-        Attribute:
-            length: float
-                The length of the connection.
-            stiffness_constant: float
-                The stiffness constant of the connection.
-            c: float
-                The damping coefficient of the connection.
+class Support(Component):
+    """
+    Support object, which is the support object for the simulation.
+
+    Attributes:
+    -----------
+        position: tuple (x, y, z)
+            The position (co-ordinate) of the support.
     """
 
-    def __init__(self, length=1, stiffness_constant=1,
-        damping_coeff=0, *args, **kwargs):
-        """Create a new string component."""
-        super().__init__(length, *args, **kwargs)
-        self._stiffness_constant = stiffness_constant
-        self._damping_coeff = damping_coeff
+    def __init__(self,
+                 position=(0, 0, 0),
+                 **kwargs):
+        self._position = position
+        super().__init__(**kwargs)
+
+    def define_properties(self):
+        "Method to define properties."
+        self.properties = {"position": self.position}
 
     @property
-    def stiffness_constant(self):
-        return self._stiffness_constant
+    def position(self):
+        "Call the position property of the support."
+        return self.position
 
-    @stiffness_constant.setter
-    def stiffness_constant(self, value):
-        self._stiffness_constant = value
-
-    @property
-    def damping_coeff(self):
-        return self._damping_coeff
-
-    @damping_coeff.setter
-    def damping_coeff(self, value):
-        self._damping_coeff = value
+    @position.setter
+    def position(self, value):
+        "Update the position property of the position."
+        self.position = value

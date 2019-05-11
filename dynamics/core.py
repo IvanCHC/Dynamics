@@ -14,6 +14,9 @@ class Model:
     This is the abstract class for building `model` of the dynamic simulation
     using the list of user defined components.
 
+    Note: Default gravity is acting on the vertical (Z) direction, i.e. (0, 0, -g).
+          Any change of frame of reference may result in the gravity definition.
+
     Attributes:
     -----------
         components: list
@@ -81,20 +84,28 @@ class Component:
     """
     This class is an abstract class, which creates component
     objects for the simulation.
+
+    Attributes:
+    -----------
+    properties: dict
+            The dictionart of properties for the component object.
     """
 
+    __metaclass__ = ABCMeta
+
     def __init__(self, **kwargs):
-        pass
+        self.properties = {}
+        self.define_properties()
 
     @abstractmethod
     def define_properties(self):
         "Method to define properties of the component."
         raise NotImplementedError("Method is not implemented.")
 
-    @abstractmethod
-    def get_properties(self):
-        "Method to return defined properties of the component."
-        raise NotImplementedError("Method is not implemented.")
+    def update_properties(self, **kwargs):
+        "Method to update properties of the component."
+        for key, value in kwargs.items():
+            self.properties[key] = value
 
 class Solver:
     """
