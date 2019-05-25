@@ -137,7 +137,7 @@ class Component:
         "Call the name property of the component."
         return self._name
 
-    @length.setter
+    @name.setter
     def name(self, value):
         "Update the name property of the component."
         self._name = value

@@ -1,11 +1,10 @@
 """
-Unit test for pendulum.py.
+Unit test for core.py.
 """
 
 from unittest import TestCase
 from dynamics.core import Model
 from utils.test_utils import run_test
-# from unittest.mock import Mock, patch
 
 class TestModel(TestCase):
     "Unit test for the Model."
