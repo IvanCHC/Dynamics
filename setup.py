@@ -15,12 +15,4 @@ setup(name='dynamics',
           'Programming Language :: Python :: 3.7',
           'Topic :: Scientific/Engineering',
       ],
-      install_requires=[
-          'numpy',
-          'scipy',
-          'matplotlib',
-          'pyqt5',
-          'pyqtgraph',
-          'sympy'
-      ],
     )
