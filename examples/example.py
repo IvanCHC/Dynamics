@@ -8,6 +8,7 @@ from sympy.physics.vector import dynamicsymbols
 simulation = base.Simulation()
 
 # Register mass component
+body = creator.create('body', Body, **{'mass':2, 'drag_coeff':0.1, 'length':2})
 simulation.register("mass", Body, 1, 0, 1, name="test")
 
 #%%
