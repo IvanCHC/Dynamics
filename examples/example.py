@@ -21,12 +21,15 @@ kinectic_1 = kinectic(simulation.mass().mass, velo_x)
 kinectic_2 = kinectic(simulation.mass().mass, velo_y)
 T = kinectic_1 + kinectic_2
 T = sp.simplify(T)
+# print(dynamicsymbols('theta'))
 theta_dot_expr = sp.Derivative(dynamicsymbols('theta'), sp.Symbol('t'))
 T = T.subs(theta_dot_expr, dynamicsymbols('theta_dot'))
+print(T)
 
 #%%
-potential = potentialGrav(simulation.mass().mass, disp_y)
+potential = potentialGrav(simulation.mass().mass, 1 - disp_y)
 V = sp.simplify(potential)
+print(V)
 
 #%%
 part_a = sp.diff(T, sp.Symbol('theta'))
