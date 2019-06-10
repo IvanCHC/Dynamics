@@ -2,35 +2,13 @@
 Author: Ivan (Chon-Hou) Chan
 This is a numerical simulation of pendulum.
 """
-# from dynamics.core import Model, Simulation
-# from dynamics.component import Mass, Connection, Support
-
-# class PendulumModel(Model):
-#     """
-#     Simple pendulum dynamic model, the model is consisted of mass,
-#     connection and support.
-
-#     Components inputs must have a mass, connection and support objects. 
-#     """
-
-#     def __init__(self,
-#                  components=[Mass, Connection, Support],
-#                  reference=(0, 0, 0)):
-#         super().__init__(componets, reference)
-
-#     def setup(self):
-#         "Setup of the pendulum dynamic model."
-#         # Construct the components
-#         mass = self.build_component(self.component[0])
-#         connection = self.build_component(self.component[1])
-#         support = self.build_component(self.component[2])
-
 #%%
 # Import all module for the simulation
 from dynamics import base, creator, model
 from dynamics.tools import Body, kinectic, potentialGrav, rotation
 import sympy as sp
 from sympy.physics.vector import dynamicsymbols
+import matplotlib.pyplot as plt 
 
 simulation = base.Simulation()
 
@@ -43,3 +21,36 @@ motion = rotation(simulation.mass().length)
 a = model.Model(motion, simulation.mass())
 expre = a.acceleration()
 print(expre)
+
+mass_equ = expre.coeff(dynamicsymbols('theta_ddot'))
+print(mass_equ)
+react_equ = -expre.subs(dynamicsymbols('theta_ddot'), 0)
+print(react_equ)
+
+#%%
+# Split into systems of linear equations
+s = 1.5
+v = 0
+t = 0
+dt = 1e-3
+
+s_rec = [s]
+v_rec = [v]
+t_rec = [t]
+
+
+for i in range(10000):
+    s = s + v * dt
+    v = v + ((react_equ / mass_equ).subs(dynamicsymbols('theta'), s)).subs(dynamicsymbols('theta_dot'), v) * dt
+    t = t + dt
+    
+    # print(s)
+    # print(v)
+    # print(t)
+
+    s_rec.append(s)
+    v_rec.append(v)
+    t_rec.append(t)
+
+plt.plot(t_rec, s_rec)
+plt.show()
