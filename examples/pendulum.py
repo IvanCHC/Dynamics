@@ -6,6 +6,7 @@ This is a numerical simulation of pendulum.
 # Import all module for the simulation
 from dynamics import base, creator, model
 from dynamics.tools import Body, kinectic, potentialGrav, rotation
+from dynamics.tools.solver import euler, improved_euler, RK2, RK4
 import sympy as sp
 from sympy.physics.vector import dynamicsymbols
 import matplotlib.pyplot as plt 
@@ -29,24 +30,20 @@ print(react_equ)
 
 #%%
 # Split into systems of linear equations
-s = 1.5
+s = 3.1
 v = 0
 t = 0
-dt = 1e-3
+dt = 5e-3
 
 s_rec = [s]
 v_rec = [v]
 t_rec = [t]
 
 
-for i in range(10000):
-    s = s + v * dt
-    v = v + ((react_equ / mass_equ).subs(dynamicsymbols('theta'), s)).subs(dynamicsymbols('theta_dot'), v) * dt
-    t = t + dt
+for i in range(250):
     
-    # print(s)
-    # print(v)
-    # print(t)
+    s, v, t = RK4(react_equ / mass_equ, s, v, t, dynamicsymbols('theta'),
+                    dynamicsymbols('theta_dot'), dt)
 
     s_rec.append(s)
     v_rec.append(v)
