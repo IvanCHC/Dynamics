@@ -45,7 +45,7 @@ def create(name, base, **kwargs):
 
     objtype = type(str(name), (base,), dict_cls)
     objtype.__init__ = initType
-    global()[name] = objtype
+    globals()[name] = objtype
 
     return objtype()
     
