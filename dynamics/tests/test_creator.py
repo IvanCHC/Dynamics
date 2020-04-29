@@ -13,7 +13,7 @@ def teardown_func():
     creator.__dict__.pop(CNAME)
 
 class TestCreator(TestCase):
-    "Unit test for the Creator."
+    """Unit test for module Creator."""
     
     @with_setup(None, teardown_func)
     def test_create(self):

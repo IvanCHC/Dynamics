@@ -42,7 +42,7 @@ def potentialGrav(mass, disp=None, g=g_acc):
         Symbolic expression of potential energy.
     """
     if disp is not None:
-        return mass * (1 - disp) * g
+        return mass * disp * g
     else:
         return 0
 

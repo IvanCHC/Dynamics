@@ -1,10 +1,13 @@
+# Numerical and symbolic packages
 numpy
 scipy
 sympy
 matplotlib
 
-pyqt5 == 5.12
-pyqtgraph
-PyOpenGL
+# Interface packages
+# pyqt5 == 5.12
+# pyqtgraph
+# PyOpenGL
 
+# Unittest packages
 nose
