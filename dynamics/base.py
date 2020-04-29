@@ -37,14 +37,20 @@ class Simulation:
         Similarily, if the function has attribure `__dict__`, the registered
         function will also be updated.
         """
-        rfunc = partial(function, *args, **kwargs)
-        rfunc.__name__ = alias
-        rfunc.__doc__ = function.__doc__
+        rfunc = None
+
+        if isinstance(function, type):
+            rfunc = partial(function, *args, **kwargs)
+            rfunc.__name__ = alias
+            rfunc.__doc__ = function.__doc__
 
         if hasattr(function, "__dict__") and not isinstance(function, type):
             rfunc.__dict__.update(function.__dict__.copy())
 
-        setattr(self, alias, rfunc)
+        if rfunc is not None:
+            setattr(self, alias, rfunc)
+        else:        
+            setattr(self, alias, function)
 
     def unregister(self, alias):
         """Decouple (/remove) alias and function from the simulation.
