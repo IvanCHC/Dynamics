@@ -46,10 +46,10 @@ def rotation(length):
         y (Symbol): Generalised expression of motion in y-axis.
         theta (Symbol): Symbollic variable.
     """
-    theta = dynamicsymbols("theta")
+    x = dynamicsymbols("x")
 
     # Resolve vector motion
-    x = length * sp.sin(theta)
-    y = length * sp.cos(theta)
+    y = sp.sqrt(length**2 - x**2)
+    theta = sp.atan(x/y)
 
     return x, y, theta
