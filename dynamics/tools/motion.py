@@ -15,38 +15,40 @@ from sympy.physics.vector import dynamicsymbols
 # Translational Motion #
 ########################
 
-def translation(length):
+def translation(length: float, var_name: str):
     """This function creates the expressions of motions of a body.
     
     Parameters:
         length (float): Length of the connection.
+        var_name (string): name of symbollic variable.
 
     Returns:
-        l (Symbol): Symbollic Generalised expression of motion in x-axis.
         x (Symbol): Symbollic variable.
+        l (Symbol): Symbollic Generalised expression of motion in x-axis.
 
     """
-    x = dynamicsymbols("x")
+    x = dynamicsymbols(var_name)
     l = length + x
 
-    return l, x
+    return x, l
 
 #####################
 # Rotational Motion #
 #####################
 
-def rotation(length):
+def rotation(length: float, var_name: str):
     """This function creates the expressions of motions of a body.
     
     Parameters:
         length (float): Length of the connection.
+        var_name (string): name of symbollic variable.
 
     Returns:
         x (Symbol): Generalised expression of motion in x-axis.
         y (Symbol): Generalised expression of motion in y-axis.
         theta (Symbol): Symbollic variable.
     """
-    x = dynamicsymbols("x")
+    x = dynamicsymbols(var_name)
 
     # Resolve vector motion
     y = sp.sqrt(length**2 - x**2)
