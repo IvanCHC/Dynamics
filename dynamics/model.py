@@ -7,7 +7,6 @@ import sympy as sp
 from sympy.physics.vector import dynamicsymbols
 
 from dynamics.tools import kinectic, potentialGrav
-from dynamics.tools.solver import euler
 
 class Model:
     """A model class for evaluating the expression of motions of the system.
@@ -15,21 +14,27 @@ class Model:
     system.
     """
 
-    def __init__(self, motion: list, component:list):
+    def __init__(self, motion: list, component:list, solution:list):
         self.motion = [motion] if not isinstance(motion, list) else motion
         self.component = [component] if not isinstance(component, list) \
             else component
+        self.solution = [solution] if not isinstance(solution, list) \
+            else solution
         
         self.direction_grav = (0, 1, 0)
+        self.results = None
 
-    def initialiser(self, direction_grav=None):
+    def initialise(self, direction_grav=None):
         """This class to initalise a set of prescribed
         motions based on the degree of freedom of the system. It should
         provide a way to generalise all energy methods."""
         if direction_grav is None:
             self.direction_grav = (0, 1, 0)
         else:
-            self.direction_grav = direction_grav 
+            self.direction_grav = direction_grav
+
+        # TODO(Ivan): Generalise it for multi-nodes system.
+
 
     def acceleration(self):
         """Evaluate the model of sytem of motion equations."""
@@ -52,9 +57,24 @@ class Model:
 
         return expression
     
-    def solve(self, solver=euler):
+    # TODO(Ivan): Generalise it for multi-nodes system.
+    def solve(self, solver):
         """Solve the model using the given solver."""
-        pass
+        expre = self.acceleration()
+        mass_equ = expre.coeff(dynamicsymbols(self.solution[0].var_name+'ddot'))
+        react_equ = sp.simplify(-expre.subs(dynamicsymbols(self.solution[0].var_name+'ddot'), 0))
+        acc = sp.simplify(react_equ / mass_equ)
+
+        from tqdm import tqdm
+
+        s, v, t = self.solution[0].s, self.solution[0].v, self.solution[0].t
+        for i in tqdm(range(500)):
+            s, v, t = solver(acc, s, v, t, dynamicsymbols('x'),
+                            dynamicsymbols('xdot'), self.solution[0].dt)
+
+            self.solution[0].s_rec.append(s)
+            self.solution[0].v_rec.append(v)
+            self.solution[0].t_rec.append(t)
 
     # TODO(Ivan): Generalise it for multi-nodes system.
     def _kinectic_energy(self):

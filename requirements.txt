@@ -5,6 +5,7 @@ sympy
 matplotlib
 
 # Interface packages
+tqdm
 # pyqt5 == 5.12
 # pyqtgraph
 # PyOpenGL

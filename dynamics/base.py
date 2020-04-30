@@ -7,6 +7,8 @@ import sys
 
 from functools import partial
 
+from dynamics.tools.solver import euler
+
 class Simulation:
     """A simulation class for nonlinear dynamics that contains model, solver
     and componets. At first the simulation object contains a method
@@ -20,7 +22,8 @@ class Simulation:
     def __init__(self):
         self.register("map", map)
         self.register("model", None)
-        self.register("solver", None)
+        self.register("solver", euler)
+        self.register("solution", None)
 
     def register(self, alias, function, *args, **kwargs):
         """Register (/extend) the given *function* in the simulation object under
@@ -65,5 +68,7 @@ class Simulation:
     def run(self):
         """Run the simulation for the given model and solver, the results are store
         in attribute `results`."""
-        pass
+        self.model.initialise()
+        self.model.solve(self.solver)
+        self.solution = self.model.solution[0]
         
