@@ -30,16 +30,46 @@ class Model:
         T = self._kinectic_energy()
         V = self._potential_energy()
 
-        # TODO(Ivan): Change the names of terms variables
-        t_term_1 =  self._time_derivative(sp.diff(T , dynamicsymbols('theta_dot')))
-        # theta_dot_dot_expr = sp.Derivative(dynamicsymbols('theta_dot'), (sp.Symbol('t'), 2))
-        theta_dot_dot_expr = sp.Derivative(dynamicsymbols('theta_dot'), sp.Symbol('t'))
-        t_term_1 = t_term_1.subs(theta_dot_dot_expr, dynamicsymbols("theta_ddot"))
-        t_term_2 = sp.diff(T, sp.Symbol('theta')).doit()
-        v_term = sp.Derivative(V, dynamicsymbols('theta')).doit()
+        # # # TODO(Ivan): Change the names of terms variables
+        # # t_term_1 =  self._time_derivative(sp.diff(T , dynamicsymbols('theta_dot')))
+        # dt_dx_dot =  self._time_derivative(sp.diff(T , dynamicsymbols('x_dot')))
+        # dt_dy_dot =  self._time_derivative(sp.diff(T , dynamicsymbols('y_dot')))
 
-        expression = t_term_1 - t_term_2 + v_term
-        expression = sp.simplify(expression)
+        # # theta_dot_dot_expr = sp.Derivative(dynamicsymbols('theta_dot'), (sp.Symbol('t'), 2))
+        # # theta_dot_dot_expr = sp.Derivative(dynamicsymbols('theta_dot'), sp.Symbol('t'))
+        # x_ddot = sp.Derivative(dynamicsymbols('x_dot'), sp.Symbol('t'))
+        # y_ddot = sp.Derivative(dynamicsymbols('y_dot'), sp.Symbol('t'))
+
+        # # t_term_1 = t_term_1.subs(theta_dot_dot_expr, dynamicsymbols("theta_ddot"))
+        # dt_dx_dot = dt_dx_dot.subs(x_ddot, dynamicsymbols("x_ddot"))
+        # dt_dy_dot = dt_dy_dot.subs(y_ddot, dynamicsymbols("y_ddot"))
+        # t_term_1 = dt_dx_dot + dt_dy_dot
+
+        # # t_term_2 = sp.diff(T, sp.Symbol('theta')).doit()
+        # dt_dx_ddot = sp.diff(T, sp.Symbol('x')).doit()
+        # dt_dy_ddot = sp.diff(T, sp.Symbol('y')).doit()
+        # t_term_2 = dt_dx_ddot + dt_dy_ddot
+
+        # dv_dx = sp.Derivative(V, dynamicsymbols('x')).doit()
+        # dv_dy = sp.Derivative(V, dynamicsymbols('y')).doit()
+        # v_term = dv_dx + dv_dy 
+
+        # expression = t_term_1 - t_term_2 + v_term
+        # expression = sp.simplify(expression)
+
+        L = T - V
+
+        dL_dx = sp.diff(L , dynamicsymbols('x')).doit()
+
+        x_dot = self._time_derivative(dynamicsymbols("x"))
+        x_ddot = sp.Derivative(dynamicsymbols('xdot'), sp.Symbol('t'))
+
+        dL_dx_dot_dt = self._time_derivative(sp.diff(L , dynamicsymbols('xdot')).subs(x_dot, dynamicsymbols("xdot")))
+        dL_dx_dot_dt = dL_dx_dot_dt.subs(x_dot, dynamicsymbols("xdot"))
+        dL_dx_dot_dt = dL_dx_dot_dt.subs(x_ddot, dynamicsymbols("xddot"))
+
+        expression = dL_dx - dL_dx_dot_dt
+        # expression = sp.simplify(expression)
 
         return expression
     
@@ -56,8 +86,10 @@ class Model:
         T = sp.simplify(T)
 
         for _, expre in enumerate(self.motion):
-            theta_dot_exper = self._time_derivative(expre[-1])
-            T = T.subs(theta_dot_exper, dynamicsymbols('theta_dot'))
+            x_dot_exper = self._time_derivative(expre[0])
+            T = T.subs(x_dot_exper, dynamicsymbols('xdot'))
+            y_dot_exper = self._time_derivative(expre[1])
+            T = T.subs(y_dot_exper, dynamicsymbols('ydot'))
 
         return T
 
