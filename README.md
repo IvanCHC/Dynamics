@@ -1,7 +1,7 @@
 # **Dynamics**
 Simulation of dynamic systems using numerical methods, the results are visualised by animation and other forms of graphical representation.
 
-[![Build Status](https://travis-ci.com/IvanCHC/Dynamics.svg?branch=develop)](https://travis-ci.com/IvanCHC/Dynamics)
+[![Build Status](https://travis-ci.com/IvanCHC/Dynamics.svg?token=99sVxBjFUBrxt15zAmkK&branch=develop)](https://travis-ci.com/IvanCHC/Dynamics)
 
 ## **Installation and Environment Setup**
 Currently using python 3.7.
