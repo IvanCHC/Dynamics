@@ -19,6 +19,8 @@ class Simulation:
 
     def __init__(self):
         self.register("map", map)
+        self.register("model", None)
+        self.register("solver", None)
 
     def register(self, alias, function, *args, **kwargs):
         """Register (/extend) the given *function* in the simulation object under
@@ -44,8 +46,8 @@ class Simulation:
             rfunc.__name__ = alias
             rfunc.__doc__ = function.__doc__
 
-        if hasattr(function, "__dict__") and not isinstance(function, type):
-            rfunc.__dict__.update(function.__dict__.copy())
+            if hasattr(function, "__dict__") and not isinstance(function, type):
+                rfunc.__dict__.update(function.__dict__.copy())
 
         if rfunc is not None:
             setattr(self, alias, rfunc)
@@ -59,4 +61,9 @@ class Simulation:
             alias (str): The name of function will remove from simulation.
         """
         delattr(self, alias)
+
+    def run(self):
+        """Run the simulation for the given model and solver, the results are store
+        in attribute `results`."""
+        pass
         
