@@ -48,31 +48,35 @@ class Model:
 
     def acceleration(self):
         """Evaluate the model of sytem of motion equations."""
+
         T = self._kinectic_energy()
         V = self._potential_energy()
 
         L = T - V
+        L = sp.simplify(L)
 
-        dL_dx = sp.diff(L , dynamicsymbols('x')).doit()
+        var_name = self.solution[0].var_name
+        dL_dx = sp.diff(L , dynamicsymbols(var_name)).doit()
 
-        x_dot = self._time_derivative(dynamicsymbols("x"))
-        x_ddot = sp.Derivative(dynamicsymbols('xdot'), sp.Symbol('t'))
+        x_dot = self._time_derivative(dynamicsymbols(var_name))
+        x_ddot = sp.Derivative(dynamicsymbols(var_name+'dot'), sp.Symbol('t'))
 
-        dL_dx_dot_dt = self._time_derivative(sp.diff(L , dynamicsymbols('xdot')).subs(x_dot, dynamicsymbols("xdot")))
-        dL_dx_dot_dt = dL_dx_dot_dt.subs(x_dot, dynamicsymbols("xdot"))
-        dL_dx_dot_dt = dL_dx_dot_dt.subs(x_ddot, dynamicsymbols("xddot"))
+        dL_dx_dot_dt = self._time_derivative(sp.diff(L , x_dot).subs(x_dot, dynamicsymbols(var_name+"dot")))
+        dL_dx_dot_dt = dL_dx_dot_dt.subs(x_dot, dynamicsymbols(var_name+"dot"))
+        dL_dx_dot_dt = dL_dx_dot_dt.subs(x_ddot, dynamicsymbols(var_name+"ddot"))
 
         expression = dL_dx - dL_dx_dot_dt
         expression = sp.simplify(expression)
 
         return expression
     
-    # TODO(Ivan): Generalise it for multi-nodes system.
     def solve(self, solver):
         """Solve the model using the given solver."""
         expre = self.acceleration()
-        mass_equ = expre.coeff(dynamicsymbols(self.solution[0].var_name+'ddot'))
-        react_equ = sp.simplify(-expre.subs(dynamicsymbols(self.solution[0].var_name+'ddot'), 0))
+
+        var_name = self.solution[0].var_name
+        mass_equ = expre.coeff(dynamicsymbols(var_name+'ddot'))
+        react_equ = sp.simplify(-expre.subs(dynamicsymbols(var_name+'ddot'), 0))
         acc = sp.simplify(react_equ / mass_equ)
 
         from tqdm import tqdm
@@ -81,14 +85,15 @@ class Model:
         t = self.time_start
         self.solution[0].time = t
         for i in tqdm(range(self.n_iter)):
-            s, v, t = solver(acc, s, v, t, dynamicsymbols('x'),
-                            dynamicsymbols('xdot'), self.time_step)
+            s, v, t = solver(acc, s, v, t, dynamicsymbols(var_name),
+                            dynamicsymbols(var_name+'dot'), self.time_step)
+
+            s, v, t = s, v.evalf(), t            
 
             self.solution[0].displacement.append(s)
             self.solution[0].velocity.append(v)
             self.solution[0].time.append(t)
 
-    # TODO(Ivan): Generalise it for multi-nodes system.
     def _kinectic_energy(self):
         """Evaluate the kinetic energy term of the Lagrangian."""
         T = []
@@ -101,10 +106,11 @@ class Model:
         T = sp.simplify(T)
 
         for _, expre in enumerate(self.motion):
+            var_name = self.solution[0].var_name
             x_dot_exper = self._time_derivative(expre[0])
-            T = T.subs(x_dot_exper, dynamicsymbols('xdot'))
+            T = T.subs(x_dot_exper, dynamicsymbols(var_name+'dot'))
             y_dot_exper = self._time_derivative(expre[1])
-            T = T.subs(y_dot_exper, dynamicsymbols('ydot'))
+            T = T.subs(y_dot_exper, dynamicsymbols(var_name+'dot'))
 
         return T
 
@@ -115,7 +121,7 @@ class Model:
         for i, expre in enumerate(self.motion):
             # Gravitational potential energy
             for j in range(len(expre)-1):
-                disp = (self.component[i].length - self.motion[i][j]) * direction_grav[j]
+                disp = (- self.motion[i][j]) * direction_grav[j]
                 V.append(potentialGrav(self.component[i].mass, disp))
             del disp
 
