@@ -7,6 +7,7 @@ import sys
 
 from functools import partial
 
+from dynamics.helper import SimulationParametersNotDefinedError
 from dynamics.tools.solver import euler
 
 class Simulation:
@@ -23,7 +24,8 @@ class Simulation:
         self.register("map", map)
         self.register("model", None)
         self.register("solver", euler)
-        self.register("solution", None)
+        self.register("results", None)
+        self.register("_parameters", False)
 
     def register(self, alias, function, *args, **kwargs):
         """Register (/extend) the given *function* in the simulation object under
@@ -36,7 +38,7 @@ class Simulation:
             function (method): The function which alias is referring to.
             argument (~): Argument(s) and keyword argument(s) that would pass to the
                           registered function when called.
-        
+
         The registered function `rfunc` would have attribute `__name__` same as
         alias and attribute `__doc__` same as the function's documentation.
         Similarily, if the function has attribure `__dict__`, the registered
@@ -54,7 +56,7 @@ class Simulation:
 
         if rfunc is not None:
             setattr(self, alias, rfunc)
-        else:        
+        else:
             setattr(self, alias, function)
 
     def unregister(self, alias):
@@ -68,7 +70,20 @@ class Simulation:
     def run(self):
         """Run the simulation for the given model and solver, the results are store
         in attribute `results`."""
-        self.model.initialise()
+        if self._parameters == False:
+            raise SimulationParametersNotDefinedError(
+                    """Please use set_parameters method to set parameters before
+                    running the simulation."""
+                )
+
+        self.model.initialise(time_step=self.time_step, time_start=self.time_start,
+                              n_iter=self.n_iter)
         self.model.solve(self.solver)
-        self.solution = self.model.solution[0]
-        
+        self.results = self.model.solution[0]
+
+    def set_paramters(self, time_step: float = 1e-3,
+                      time_start: float = 0.0, time_end: float = 2.0):
+        """Set the simulation parameters."""
+        self.time_step, self.time_start, self.time_end = time_step, time_start, time_end
+        self.n_iter = int((time_end - time_start) / time_step)
+        self._parameters = True

@@ -22,9 +22,13 @@ class Model:
             else solution
         
         self.direction_grav = (0, 1, 0)
+        self.time_start = 0.0
+        self.time_step = 1e-3
+        self.n_iter = 100
         self.results = None
 
-    def initialise(self, direction_grav=None):
+    def initialise(self, direction_grav=None, time_step=None,
+                   n_iter=None, time_start=None):
         """This class to initalise a set of prescribed
         motions based on the degree of freedom of the system. It should
         provide a way to generalise all energy methods."""
@@ -32,9 +36,15 @@ class Model:
             self.direction_grav = (0, 1, 0)
         else:
             self.direction_grav = direction_grav
+        
+        if time_start is not None:
+            self.time_start = time_start
 
-        # TODO(Ivan): Generalise it for multi-nodes system.
-
+        if time_step is not None:
+            self.time_step = time_step
+        
+        if n_iter is not None:
+            self.n_iter = n_iter
 
     def acceleration(self):
         """Evaluate the model of sytem of motion equations."""
@@ -67,14 +77,16 @@ class Model:
 
         from tqdm import tqdm
 
-        s, v, t = self.solution[0].s, self.solution[0].v, self.solution[0].t
-        for i in tqdm(range(500)):
+        s, v, _, _ = self.solution[0].initial_conditions
+        t = self.time_start
+        self.solution[0].time = t
+        for i in tqdm(range(self.n_iter)):
             s, v, t = solver(acc, s, v, t, dynamicsymbols('x'),
-                            dynamicsymbols('xdot'), self.solution[0].dt)
+                            dynamicsymbols('xdot'), self.time_step)
 
-            self.solution[0].s_rec.append(s)
-            self.solution[0].v_rec.append(v)
-            self.solution[0].t_rec.append(t)
+            self.solution[0].displacement.append(s)
+            self.solution[0].velocity.append(v)
+            self.solution[0].time.append(t)
 
     # TODO(Ivan): Generalise it for multi-nodes system.
     def _kinectic_energy(self):

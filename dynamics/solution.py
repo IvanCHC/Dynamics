@@ -13,12 +13,16 @@ class Solution:
         self._time = [time_0]
 
     @property
+    def initial_conditions(self):
+        return self.disp_0, self.velo_0, self.acc_0, self.time_0
+
+    @property
     def displacement(self):
         return self._displacement
 
     @displacement.setter
     def displacement(self, value):
-        self._displacement.append(value)
+        self._displacement = [value] if not isinstance(value, list) else value
 
     @property
     def disp_0(self):
@@ -30,7 +34,7 @@ class Solution:
 
     @velocity.setter
     def velocity(self, value):
-        self._velocity.append(value)
+        self._velocity = [value] if not isinstance(value, list) else value
 
     @property
     def velo_0(self):
@@ -42,7 +46,7 @@ class Solution:
 
     @acceleration.setter
     def acceleration(self, value):
-        self._acceleration.append(value)
+        self._acceleration = [value] if not isinstance(value, list) else value
 
     @property
     def acc_0(self):
@@ -54,7 +58,7 @@ class Solution:
 
     @time.setter
     def time(self, value):
-        self._time.append(value)
+        self._time = [value] if not isinstance(value, list) else value
 
     @property
     def time_0(self):
