@@ -115,8 +115,7 @@ class Model:
         for i, expre in enumerate(self.motion):
             # Gravitational potential energy
             for j in range(len(expre)-1):
-                # TODO(Ivan): change the '1' to length
-                disp = (1 - self.motion[i][j]) * direction_grav[j]
+                disp = (self.component[i].length - self.motion[i][j]) * direction_grav[j]
                 V.append(potentialGrav(self.component[i].mass, disp))
             del disp
 
