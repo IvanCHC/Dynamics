@@ -1,5 +1,5 @@
 """The module `dynamics.solution` store information and results of the solution."""
-
+from copy import deepcopy
 class Solution:
     """A solution class for the storage the results motion of the simulation.
     Each solution object should only store results motion of one moving body."""
@@ -11,6 +11,10 @@ class Solution:
         self._velocity = [velo_0]
         self._acceleration = [0.0]
         self._time = [time_0]
+
+    def clear(self):
+        self.displacement, self.velocity, self.acceleration, self.time = \
+            self.disp_0, self.velo_0, self.acc_0, self.time_0
 
     @property
     def initial_conditions(self):
