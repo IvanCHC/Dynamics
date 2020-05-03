@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from functools import reduce
 from typing import TYPE_CHECKING, List, Optional
 
+import numpy as np
 import sympy as sp
 from sympy.physics.vector import dynamicsymbols
 
@@ -22,7 +23,7 @@ class Model:
     def __init__(self, asset: List['Asset']):
         self.asset = [asset] if not isinstance(asset, list) else asset
         
-        self.direction_grav = (0, 1, 0)
+        self.direction_grav = (0, 1)
         self.time_start = 0.0
         self.time_step = 1e-3
         self.n_iter = 100
@@ -34,7 +35,7 @@ class Model:
         motions based on the degree of freedom of the system. It should
         provide a way to generalise all energy methods."""
         if direction_grav is None:
-            self.direction_grav = (0, 1, 0)
+            self.direction_grav = (0, 1)
         else:
             self.direction_grav = direction_grav
         
@@ -107,10 +108,12 @@ class Model:
     def _kinectic_energy(self):
         """Evaluate the kinetic energy term of the Lagrangian."""
         T = []
-        for i, asset in enumerate(self.asset):
-            for j in range(len(asset.motion)-1):
-                velo = self._time_derivative(self.asset[i].motion[j])
-                T.append(kinectic(self.asset[i].component.mass, velo))
+        for _, asset in enumerate(self.asset):
+            for i, motion in enumerate(asset.motion):
+                if asset.connection is not None:
+                    motion = motion + asset.connection.motion[i]
+                velo = self._time_derivative(motion)
+                T.append(kinectic(asset.component.mass, velo))
         
         T = reduce((lambda x, y: x + y), T)
         T = sp.simplify(T)
@@ -130,8 +133,10 @@ class Model:
         direction_grav = self.direction_grav
         for i, asset in enumerate(self.asset):
             # Gravitational potential energy
-            for j in range(len(asset.motion)-1):
-                disp = (- asset.motion[j]) * direction_grav[j]
+            for j, motion in enumerate(asset.motion):
+                if asset.connection is not None:
+                    motion = motion + asset.connection.motion[j]
+                disp = (motion) * direction_grav[j]
                 V.append(potentialGrav(asset.component.mass, disp))
             del disp
 
@@ -180,3 +185,18 @@ class Asset:
     def motion(self):
         return self.motion_func(self.component.length, self.var_name)
 
+    @property
+    def results(self):
+        # try:
+        x_sym, y_sym = self.motion
+        x_func = sp.lambdify(dynamicsymbols(self.var_name), x_sym, 'numpy')
+        y_func = sp.lambdify(dynamicsymbols(self.var_name), y_sym, 'numpy')
+        result_dict = {}
+        result_dict['x'] = x_func(np.array(self.solution.displacement, dtype=np.float64))
+        result_dict['y'] = y_func(np.array(self.solution.displacement, dtype=np.float64))
+        result_dict[self.var_name] = self.solution.displacement
+        result_dict[self.var_name+'dot'] = self.solution.velocity
+        result_dict['time'] = self.solution.time
+        return result_dict
+        # except:
+        #     print("No solution has found.")

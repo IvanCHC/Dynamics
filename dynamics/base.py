@@ -3,9 +3,8 @@ dynamics simulations. This module contains a class `dynamics.base.Simulation`
 to store simulation model, components and solver; and a virtual class
 `dynamics.base.Results` for the results of the simulation. """
 
-import sys
-
 from functools import partial
+import sys
 
 from dynamics.helper import SimulationParametersNotDefinedError
 from dynamics.tools.solver import euler
@@ -79,7 +78,7 @@ class Simulation:
         self.model.initialise(time_step=self.time_step, time_start=self.time_start,
                               n_iter=self.n_iter)
         self.model.solve(self.solver)
-        self.results = self.model.asset[0].solution
+        self.results = self.model.asset[0].results
 
     def set_paramters(self, time_step: float = 1e-3,
                       time_start: float = 0.0, time_end: float = 2.0):
