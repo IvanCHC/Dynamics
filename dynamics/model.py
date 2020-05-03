@@ -1,12 +1,17 @@
 """The module `dynamics.model` creates the dynamic model for the system 
 defined."""
 
+from dataclasses import dataclass, field
 from functools import reduce
+from typing import TYPE_CHECKING, List, Optional
 
 import sympy as sp
 from sympy.physics.vector import dynamicsymbols
 
 from dynamics.tools import kinectic, potentialGrav
+
+if TYPE_CHECKING:
+    from dynamics.tools import Body, Solution
 
 class Model:
     """A model class for evaluating the expression of motions of the system.
@@ -14,12 +19,14 @@ class Model:
     system.
     """
 
-    def __init__(self, motion: list, component:list, solution:list):
-        self.motion = [motion] if not isinstance(motion, list) else motion
-        self.component = [component] if not isinstance(component, list) \
-            else component
-        self.solution = [solution] if not isinstance(solution, list) \
-            else solution
+    # def __init__(self, motion: list, component:list, solution:list):
+    #     self.motion = [motion] if not isinstance(motion, list) else motion
+    #     self.component = [component] if not isinstance(component, list) \
+    #         else component
+    #     self.solution = [solution] if not isinstance(solution, list) \
+    #         else solution
+    def __init__(self, asset: List['Asset']):
+        self.asset = [asset] if not isinstance(asset, list) else asset
         
         self.direction_grav = (0, 1, 0)
         self.time_start = 0.0
@@ -55,18 +62,22 @@ class Model:
         L = T - V
         L = sp.simplify(L)
 
-        var_name = self.solution[0].var_name
-        dL_dx = sp.diff(L , dynamicsymbols(var_name)).doit()
+        for _, asset in enumerate(self.asset):
+            var_name = asset.var_name
 
-        x_dot = self._time_derivative(dynamicsymbols(var_name))
-        x_ddot = sp.Derivative(dynamicsymbols(var_name+'dot'), sp.Symbol('t'))
+            dL_dx = sp.diff(L , dynamicsymbols(var_name)).doit()
 
-        dL_dx_dot_dt = self._time_derivative(sp.diff(L , x_dot).subs(x_dot, dynamicsymbols(var_name+"dot")))
-        dL_dx_dot_dt = dL_dx_dot_dt.subs(x_dot, dynamicsymbols(var_name+"dot"))
-        dL_dx_dot_dt = dL_dx_dot_dt.subs(x_ddot, dynamicsymbols(var_name+"ddot"))
+            x_dot = self._time_derivative(dynamicsymbols(var_name))
+            x_ddot = sp.Derivative(dynamicsymbols(var_name+'dot'), sp.Symbol('t'))
 
-        expression = dL_dx - dL_dx_dot_dt
-        expression = sp.simplify(expression)
+            dL_dx_dot_dt = self._time_derivative(
+                sp.diff(L , x_dot).subs(x_dot, dynamicsymbols(var_name+"dot"))
+            )
+            dL_dx_dot_dt = dL_dx_dot_dt.subs(x_dot, dynamicsymbols(var_name+"dot"))
+            dL_dx_dot_dt = dL_dx_dot_dt.subs(x_ddot, dynamicsymbols(var_name+"ddot"))
+
+            expression = dL_dx - dL_dx_dot_dt
+            expression = sp.simplify(expression)
 
         return expression
     
@@ -74,42 +85,42 @@ class Model:
         """Solve the model using the given solver."""
         expre = self.acceleration()
 
-        var_name = self.solution[0].var_name
+        var_name = self.asset[0].var_name
         mass_equ = expre.coeff(dynamicsymbols(var_name+'ddot'))
         react_equ = sp.simplify(-expre.subs(dynamicsymbols(var_name+'ddot'), 0))
         acc = sp.simplify(react_equ / mass_equ)
 
         from tqdm import tqdm
 
-        s, v, _, _ = self.solution[0].initial_conditions
+        s, v, _, _ = self.asset[0].solution.initial_conditions
         t = self.time_start
-        self.solution[0].time = t
+        self.asset[0].solution.time = t
         for i in tqdm(range(self.n_iter)):
             s, v, t = solver(acc, s, v, t, dynamicsymbols(var_name),
                             dynamicsymbols(var_name+'dot'), self.time_step)
 
             s, v, t = s, v.evalf(), t            
 
-            self.solution[0].displacement.append(s)
-            self.solution[0].velocity.append(v)
-            self.solution[0].time.append(t)
+            self.asset[0].solution.displacement.append(s)
+            self.asset[0].solution.velocity.append(v)
+            self.asset[0].solution.time.append(t)
 
     def _kinectic_energy(self):
         """Evaluate the kinetic energy term of the Lagrangian."""
         T = []
-        for i, expre in enumerate(self.motion):
-            for j in range(len(expre)-1):
-                velo = self._time_derivative(self.motion[i][j])
-                T.append(kinectic(self.component[i].mass, velo))
+        for i, asset in enumerate(self.asset):
+            for j in range(len(asset.motion)-1):
+                velo = self._time_derivative(self.asset[i].motion[j])
+                T.append(kinectic(self.asset[i].component.mass, velo))
         
         T = reduce((lambda x, y: x + y), T)
         T = sp.simplify(T)
 
-        for _, expre in enumerate(self.motion):
-            var_name = self.solution[0].var_name
-            x_dot_exper = self._time_derivative(expre[0])
+        for _, asset in enumerate(self.asset):
+            var_name = self.asset[0].var_name
+            x_dot_exper = self._time_derivative(asset.motion[0])
             T = T.subs(x_dot_exper, dynamicsymbols(var_name+'dot'))
-            y_dot_exper = self._time_derivative(expre[1])
+            y_dot_exper = self._time_derivative(asset.motion[1])
             T = T.subs(y_dot_exper, dynamicsymbols(var_name+'dot'))
 
         return T
@@ -118,11 +129,11 @@ class Model:
         """Evaluate the kinetic energy term of the Lagrangian."""
         V = []
         direction_grav = self.direction_grav
-        for i, expre in enumerate(self.motion):
+        for i, asset in enumerate(self.asset):
             # Gravitational potential energy
-            for j in range(len(expre)-1):
-                disp = (- self.motion[i][j]) * direction_grav[j]
-                V.append(potentialGrav(self.component[i].mass, disp))
+            for j in range(len(asset.motion)-1):
+                disp = (- self.asset[i].motion[j]) * direction_grav[j]
+                V.append(potentialGrav(self.asset[i].component.mass, disp))
             del disp
 
         V = reduce((lambda x, y: x + y), V)
@@ -151,3 +162,22 @@ class Model:
             print('Unxpected Dynamics Error: {}').format(err)
         else:
             return deriv
+
+
+@dataclass
+class Asset:
+    """An asset data class for the storage of motion, object, and solution of
+    an asset. This data class also contians info about the asset relative to
+    the simulation, e.g. connection and relative position.
+    """
+    name: str
+    var_name: str
+    component: 'Body'
+    solution: 'Solution'
+    motion_func: callable
+    connection: Optional['Asset'] = None
+
+    @property
+    def motion(self):
+        return self.motion_func(self.component.length, self.var_name)
+

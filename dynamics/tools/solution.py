@@ -1,12 +1,10 @@
 """The module `dynamics.solution` store information and results of the solution."""
-from copy import deepcopy
 class Solution:
     """A solution class for the storage the results motion of the simulation.
     Each solution object should only store results motion of one moving body."""
 
-    def __init__(self, var_name: str = "x", disp_0: float = 0.0,
-                 velo_0: float = 0.0, time_0: float = 0.0):
-        self.var_name = var_name
+    def __init__(self, disp_0: float = 0.0, velo_0: float = 0.0, 
+                 time_0: float = 0.0):
         self._displacement = [disp_0]
         self._velocity = [velo_0]
         self._acceleration = [0.0]

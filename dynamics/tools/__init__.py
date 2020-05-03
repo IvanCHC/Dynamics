@@ -5,3 +5,4 @@ lagrange's equation for the dynamic system."""
 from .component import *
 from .energy import *
 from .motion import *
+from .solution import *
