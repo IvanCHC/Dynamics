@@ -1,18 +1,16 @@
 """The module `dynamics.model` creates the dynamic model for the system 
 defined."""
 
-from dataclasses import dataclass, field
 from functools import reduce
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List
 
-import numpy as np
 import sympy as sp
 from sympy.physics.vector import dynamicsymbols
 
 from dynamics.tools import kinectic, potentialGrav
 
 if TYPE_CHECKING:
-    from dynamics.tools import Body, Solution
+    from dynamics.asset import Asset
 
 class Model:
     """A model class for evaluating the expression of motions of the system.
@@ -58,26 +56,26 @@ class Model:
         L = sp.simplify(L)
 
         lagrangian = []
+        variables = []
         for _, asset in enumerate(self.asset):
             var_name = asset.var_name
-
-            dL_dx = sp.diff(L , dynamicsymbols(var_name)).doit()
-
             x_dot = self._time_derivative(dynamicsymbols(var_name))
             x_ddot = sp.Derivative(dynamicsymbols(var_name+'dot'), sp.Symbol('t'))
 
-            dL_dx_dot_dt = self._time_derivative(
-                sp.diff(L , x_dot).subs(x_dot, dynamicsymbols(var_name+"dot"))
-            )
-            dL_dx_dot_dt = dL_dx_dot_dt.subs(x_dot, dynamicsymbols(var_name+"dot"))
-            dL_dx_dot_dt = dL_dx_dot_dt.subs(x_ddot, dynamicsymbols(var_name+"ddot"))
+            dL_dx = sp.diff(L , dynamicsymbols(var_name)).doit()
+            dL_dx_dot_dt = self._time_derivative(sp.diff(L , dynamicsymbols(var_name+"dot")))
 
             expression = dL_dx - dL_dx_dot_dt
             expression = sp.simplify(expression)
             lagrangian.append(expression)
+            variables.append([var_name, x_dot, x_ddot])
 
-        lagrangian = reduce((lambda x, y: x + y), lagrangian)
-        lagrangian = sp.simplify(lagrangian)
+        for i, lagran in enumerate(lagrangian):
+            for j, variable in enumerate(variables):
+                lagran = lagran.subs(variable[1], dynamicsymbols(variable[0]+"dot"))
+                lagran = lagran.subs(variable[2], dynamicsymbols(variable[0]+"ddot"))
+                lagrangian[i] = lagran
+            lagrangian[i] = sp.simplify(lagrangian[i])
 
         return lagrangian
     
@@ -85,10 +83,10 @@ class Model:
         """Solve the model using the given solver."""
         expre = self.lagrangian()
 
-        for _, asset in enumerate(self.asset):
+        for i, asset in enumerate(self.asset):
             var_name = asset.var_name
-            mass_equ = expre.coeff(dynamicsymbols(var_name+'ddot'))
-            react_equ = sp.simplify(-expre.subs(dynamicsymbols(var_name+'ddot'), 0))
+            mass_equ = expre[i].coeff(dynamicsymbols(var_name+'ddot'))
+            react_equ = sp.simplify(-expre[i].subs(dynamicsymbols(var_name+'ddot'), 0))
             acc = sp.simplify(react_equ / mass_equ)
 
             from tqdm import tqdm
@@ -120,11 +118,10 @@ class Model:
 
         for _, asset in enumerate(self.asset):
             var_name = asset.var_name
-            x_dot_exper = self._time_derivative(asset.motion[0])
-            T = T.subs(x_dot_exper, dynamicsymbols(var_name+'dot'))
-            y_dot_exper = self._time_derivative(asset.motion[1])
-            T = T.subs(y_dot_exper, dynamicsymbols(var_name+'dot'))
+            var_dot_exper = self._time_derivative(dynamicsymbols(var_name))
+            T = T.subs(var_dot_exper, dynamicsymbols(var_name+'dot'))
 
+        T = sp.simplify(T)
         return T
 
     def _potential_energy(self):
@@ -167,36 +164,3 @@ class Model:
         else:
             return deriv
 
-
-@dataclass
-class Asset:
-    """An asset data class for the storage of motion, object, and solution of
-    an asset. This data class also contians info about the asset relative to
-    the simulation, e.g. connection and relative position.
-    """
-    name: str
-    var_name: str
-    component: 'Body'
-    solution: 'Solution'
-    motion_func: callable
-    connection: Optional['Asset'] = None
-
-    @property
-    def motion(self):
-        return self.motion_func(self.component.length, self.var_name)
-
-    @property
-    def results(self):
-        # try:
-        x_sym, y_sym = self.motion
-        x_func = sp.lambdify(dynamicsymbols(self.var_name), x_sym, 'numpy')
-        y_func = sp.lambdify(dynamicsymbols(self.var_name), y_sym, 'numpy')
-        result_dict = {}
-        result_dict['x'] = x_func(np.array(self.solution.displacement, dtype=np.float64))
-        result_dict['y'] = y_func(np.array(self.solution.displacement, dtype=np.float64))
-        result_dict[self.var_name] = self.solution.displacement
-        result_dict[self.var_name+'dot'] = self.solution.velocity
-        result_dict['time'] = self.solution.time
-        return result_dict
-        # except:
-        #     print("No solution has found.")
