@@ -19,12 +19,6 @@ class Model:
     system.
     """
 
-    # def __init__(self, motion: list, component:list, solution:list):
-    #     self.motion = [motion] if not isinstance(motion, list) else motion
-    #     self.component = [component] if not isinstance(component, list) \
-    #         else component
-    #     self.solution = [solution] if not isinstance(solution, list) \
-    #         else solution
     def __init__(self, asset: List['Asset']):
         self.asset = [asset] if not isinstance(asset, list) else asset
         
@@ -53,7 +47,7 @@ class Model:
         if n_iter is not None:
             self.n_iter = n_iter
 
-    def acceleration(self):
+    def lagrangian(self):
         """Evaluate the model of sytem of motion equations."""
 
         T = self._kinectic_energy()
@@ -62,6 +56,7 @@ class Model:
         L = T - V
         L = sp.simplify(L)
 
+        lagrangian = []
         for _, asset in enumerate(self.asset):
             var_name = asset.var_name
 
@@ -78,32 +73,36 @@ class Model:
 
             expression = dL_dx - dL_dx_dot_dt
             expression = sp.simplify(expression)
+            lagrangian.append(expression)
 
-        return expression
+        lagrangian = reduce((lambda x, y: x + y), lagrangian)
+        lagrangian = sp.simplify(lagrangian)
+
+        return lagrangian
     
     def solve(self, solver):
         """Solve the model using the given solver."""
-        expre = self.acceleration()
+        expre = self.lagrangian()
 
-        var_name = self.asset[0].var_name
-        mass_equ = expre.coeff(dynamicsymbols(var_name+'ddot'))
-        react_equ = sp.simplify(-expre.subs(dynamicsymbols(var_name+'ddot'), 0))
-        acc = sp.simplify(react_equ / mass_equ)
+        for _, asset in enumerate(self.asset):
+            var_name = asset.var_name
+            mass_equ = expre.coeff(dynamicsymbols(var_name+'ddot'))
+            react_equ = sp.simplify(-expre.subs(dynamicsymbols(var_name+'ddot'), 0))
+            acc = sp.simplify(react_equ / mass_equ)
 
-        from tqdm import tqdm
+            from tqdm import tqdm
+            s, v, _, _ = asset.solution.initial_conditions
+            t = self.time_start
+            asset.solution.time = t
+            for i in tqdm(range(self.n_iter)):
+                s, v, t = solver(acc, s, v, t, dynamicsymbols(var_name),
+                                dynamicsymbols(var_name+'dot'), self.time_step)
 
-        s, v, _, _ = self.asset[0].solution.initial_conditions
-        t = self.time_start
-        self.asset[0].solution.time = t
-        for i in tqdm(range(self.n_iter)):
-            s, v, t = solver(acc, s, v, t, dynamicsymbols(var_name),
-                            dynamicsymbols(var_name+'dot'), self.time_step)
+                s, v, t = s, v.evalf(), t            
 
-            s, v, t = s, v.evalf(), t            
-
-            self.asset[0].solution.displacement.append(s)
-            self.asset[0].solution.velocity.append(v)
-            self.asset[0].solution.time.append(t)
+                asset.solution.displacement.append(s)
+                asset.solution.velocity.append(v)
+                asset.solution.time.append(t)
 
     def _kinectic_energy(self):
         """Evaluate the kinetic energy term of the Lagrangian."""
@@ -117,7 +116,7 @@ class Model:
         T = sp.simplify(T)
 
         for _, asset in enumerate(self.asset):
-            var_name = self.asset[0].var_name
+            var_name = asset.var_name
             x_dot_exper = self._time_derivative(asset.motion[0])
             T = T.subs(x_dot_exper, dynamicsymbols(var_name+'dot'))
             y_dot_exper = self._time_derivative(asset.motion[1])
@@ -132,8 +131,8 @@ class Model:
         for i, asset in enumerate(self.asset):
             # Gravitational potential energy
             for j in range(len(asset.motion)-1):
-                disp = (- self.asset[i].motion[j]) * direction_grav[j]
-                V.append(potentialGrav(self.asset[i].component.mass, disp))
+                disp = (- asset.motion[j]) * direction_grav[j]
+                V.append(potentialGrav(asset.component.mass, disp))
             del disp
 
         V = reduce((lambda x, y: x + y), V)
