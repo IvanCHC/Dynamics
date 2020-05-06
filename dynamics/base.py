@@ -7,7 +7,7 @@ from functools import partial
 import sys
 
 from dynamics.tools.solver import euler
-from utils import SimulationParametersNotDefinedError
+from utils import DynamicsError, SimulationParametersNotDefinedError
 
 class Simulation:
     """A simulation class for nonlinear dynamics that contains model, solver
@@ -74,6 +74,10 @@ class Simulation:
                     """Please use set_parameters method to set parameters before
                     running the simulation."""
                 )
+        elif hasattr(self, 'model'):
+            raise DynamicsError("Missing model!! Please register model.")
+        elif hasattr(self, 'solver'):
+            raise DynamicsError("Missing solver!!! Please register solver.")
 
         self.model.initialise(time_step=self.time_step, time_start=self.time_start,
                               n_iter=self.n_iter)
