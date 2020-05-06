@@ -1,27 +1,28 @@
-"""The module `dynamics.model` creates the dynamic model for the system 
+"""The module `dynamics.model` creates the dynamic model for the system
 defined."""
 
 from functools import reduce
+from typing import TYPE_CHECKING, List
 
 import sympy as sp
 from sympy.physics.vector import dynamicsymbols
+from tqdm import tqdm
 
 from dynamics.tools import kinectic, potentialGrav
 
+if TYPE_CHECKING:
+    from dynamics.asset import Asset
+
 class Model:
     """A model class for evaluating the expression of motions of the system.
-    The model object contains a list of tuples describing the motion of the
+    The model object contains a list of Asset describing the motion of the
     system.
     """
 
-    def __init__(self, motion: list, component:list, solution:list):
-        self.motion = [motion] if not isinstance(motion, list) else motion
-        self.component = [component] if not isinstance(component, list) \
-            else component
-        self.solution = [solution] if not isinstance(solution, list) \
-            else solution
-        
-        self.direction_grav = (0, 1, 0)
+    def __init__(self, asset: List['Asset']):
+        self.asset = [asset] if not isinstance(asset, list) else asset
+
+        self.direction_grav = (0, 1)
         self.time_start = 0.0
         self.time_step = 1e-3
         self.n_iter = 100
@@ -33,91 +34,140 @@ class Model:
         motions based on the degree of freedom of the system. It should
         provide a way to generalise all energy methods."""
         if direction_grav is None:
-            self.direction_grav = (0, 1, 0)
+            self.direction_grav = (0, 1)
         else:
             self.direction_grav = direction_grav
-        
+
         if time_start is not None:
             self.time_start = time_start
 
         if time_step is not None:
             self.time_step = time_step
-        
+
         if n_iter is not None:
             self.n_iter = n_iter
 
     def acceleration(self):
         """Evaluate the model of sytem of motion equations."""
+
         T = self._kinectic_energy()
         V = self._potential_energy()
 
         L = T - V
+        L = sp.simplify(L)
 
-        dL_dx = sp.diff(L , dynamicsymbols('x')).doit()
+        acceleration = []
+        variables = []
+        for _, asset in enumerate(self.asset):
+            var_name = asset.var_name
+            x_dot = self._time_derivative(dynamicsymbols(var_name))
+            x_ddot = sp.Derivative(dynamicsymbols(var_name+'dot'), sp.Symbol('t'))
 
-        x_dot = self._time_derivative(dynamicsymbols("x"))
-        x_ddot = sp.Derivative(dynamicsymbols('xdot'), sp.Symbol('t'))
+            dL_dx = sp.diff(L , dynamicsymbols(var_name)).doit()
+            dL_dx_dot_dt = self._time_derivative(sp.diff(L , dynamicsymbols(var_name+"dot")))
 
-        dL_dx_dot_dt = self._time_derivative(sp.diff(L , dynamicsymbols('xdot')).subs(x_dot, dynamicsymbols("xdot")))
-        dL_dx_dot_dt = dL_dx_dot_dt.subs(x_dot, dynamicsymbols("xdot"))
-        dL_dx_dot_dt = dL_dx_dot_dt.subs(x_ddot, dynamicsymbols("xddot"))
+            expression = dL_dx_dot_dt - dL_dx
+            expression = sp.simplify(expression)
+            acceleration.append(expression)
+            variables.append([var_name, x_dot, x_ddot])
 
-        expression = dL_dx - dL_dx_dot_dt
-        expression = sp.simplify(expression)
+        for i, accel in enumerate(acceleration):
+            for j, variable in enumerate(variables):
+                accel = accel.subs(variable[1], dynamicsymbols(variable[0]+"dot"))
+                accel = accel.subs(variable[2], dynamicsymbols(variable[0]+"ddot"))
+                acceleration[i] = accel
+            acceleration[i] = sp.simplify(acceleration[i])
 
-        return expression
-    
-    # TODO(Ivan): Generalise it for multi-nodes system.
+        return acceleration
+
     def solve(self, solver):
-        """Solve the model using the given solver."""
+        """Solve the model using the given solver and direct numerical method, the system of
+        equations are considered as `[M] x [A] = [R]`, where [M] is the mass equalavent
+        matrix and [R] is the reaction equalavent matrix. Hence, acceleration can be solved
+        by [A] = inv([M]) x [R]."""
         expre = self.acceleration()
-        mass_equ = expre.coeff(dynamicsymbols(self.solution[0].var_name+'ddot'))
-        react_equ = sp.simplify(-expre.subs(dynamicsymbols(self.solution[0].var_name+'ddot'), 0))
-        acc = sp.simplify(react_equ / mass_equ)
 
-        from tqdm import tqdm
-
-        s, v, _, _ = self.solution[0].initial_conditions
+        var_names = []
+        acc_symbols = []
+        vel_symbols = []
+        dis_symbols = []
+        s = []
+        v = []
         t = self.time_start
-        self.solution[0].time = t
+        for i, asset in enumerate(self.asset):
+            var_names.append(asset.var_name)
+            acc_symbols.append(dynamicsymbols(asset.var_name+'ddot'))
+            vel_symbols.append(dynamicsymbols(asset.var_name+'dot'))
+            dis_symbols.append(dynamicsymbols(asset.var_name))
+            x, dx, _, _ = asset.solution.initial_conditions
+            s.append(x)
+            v.append(dx)
+
+        mass_matrix = []
+        react_matrix = []
+        for _, accel_expre in enumerate(expre):
+            mass_row = []
+            react_row = accel_expre
+            for _, acc_symbol in enumerate(acc_symbols):
+                mass_row.append(accel_expre.coeff(acc_symbol))
+                react_row = sp.simplify(react_row.subs(acc_symbol, 0))
+            mass_matrix.append(mass_row)
+            react_matrix.append(react_row)
+        mass_matrix = sp.Matrix(mass_matrix).inv()
+        react_matrix = sp.Matrix(react_matrix)
+
+        acc_matrix = mass_matrix*react_matrix
+        acc_matrix = sp.simplify(acc_matrix)
+
         for i in tqdm(range(self.n_iter)):
-            s, v, t = solver(acc, s, v, t, dynamicsymbols('x'),
-                            dynamicsymbols('xdot'), self.time_step)
+            for j, acc in enumerate(acc_matrix):
+                dx_sym = [x for k,x in enumerate(dis_symbols) if k!=j]
+                dxdot_sym = [x for k,x in enumerate(vel_symbols) if k!=j]
+                for k in range(len(dx_sym)):
+                    accel = acc.subs({dx_sym[k]: s[k], dxdot_sym[k]: v[k]})
+                if len(dx_sym) == 0:
+                    accel = acc
+                s[j], v[j], time = solver(accel, s[j], v[j], t, dis_symbols[j],
+                                          vel_symbols[j], self.time_step)
+                s[j], v[j] = s[j].evalf(), v[j].evalf()
+                self.asset[j].solution.displacement.append(s[j])
+                self.asset[j].solution.velocity.append(v[j])
+                self.asset[j].solution.time.append(time)
 
-            self.solution[0].displacement.append(s)
-            self.solution[0].velocity.append(v)
-            self.solution[0].time.append(t)
+            t = time
 
-    # TODO(Ivan): Generalise it for multi-nodes system.
     def _kinectic_energy(self):
         """Evaluate the kinetic energy term of the Lagrangian."""
         T = []
-        for i, expre in enumerate(self.motion):
-            for j in range(len(expre)-1):
-                velo = self._time_derivative(self.motion[i][j])
-                T.append(kinectic(self.component[i].mass, velo))
-        
+        for _, asset in enumerate(self.asset):
+            for i, motion in enumerate(asset.motion):
+                if asset.connection is not None:
+                    motion = motion + asset.connection.motion[i]
+                velo = self._time_derivative(motion)
+                T.append(kinectic(asset.component.mass, velo))
+
         T = reduce((lambda x, y: x + y), T)
         T = sp.simplify(T)
 
-        for _, expre in enumerate(self.motion):
-            x_dot_exper = self._time_derivative(expre[0])
-            T = T.subs(x_dot_exper, dynamicsymbols('xdot'))
-            y_dot_exper = self._time_derivative(expre[1])
-            T = T.subs(y_dot_exper, dynamicsymbols('ydot'))
+        for _, asset in enumerate(self.asset):
+            var_name = asset.var_name
+            var_dot_exper = self._time_derivative(dynamicsymbols(var_name))
+            T = T.subs(var_dot_exper, dynamicsymbols(var_name+'dot'))
 
+        T = sp.simplify(T)
         return T
 
     def _potential_energy(self):
         """Evaluate the kinetic energy term of the Lagrangian."""
         V = []
         direction_grav = self.direction_grav
-        for i, expre in enumerate(self.motion):
+        for i, asset in enumerate(self.asset):
             # Gravitational potential energy
-            for j in range(len(expre)-1):
-                # TODO(Ivan): change the '1' to length
-                disp = (1 - self.motion[i][j]) * direction_grav[j]
-                V.append(potentialGrav(self.component[i].mass, disp))
+            for j, motion in enumerate(asset.motion):
+                if asset.connection is not None:
+                    motion = motion + asset.connection.motion[j]
+                disp = - (motion) * direction_grav[j]
+                V.append(potentialGrav(asset.component.mass, disp))
             del disp
 
         V = reduce((lambda x, y: x + y), V)
@@ -127,7 +177,7 @@ class Model:
 
     def _time_derivative(self, expre):
         """Evaluate the time derivative of the symbolic expression.
-        
+
         Parameters:
             expre (Symbol): Symbolic expression.
 
@@ -146,3 +196,4 @@ class Model:
             print('Unxpected Dynamics Error: {}').format(err)
         else:
             return deriv
+

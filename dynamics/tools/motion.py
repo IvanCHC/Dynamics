@@ -17,7 +17,7 @@ from sympy.physics.vector import dynamicsymbols
 
 def translation(length: float, var_name: str):
     """This function creates the expressions of motions of a body.
-    
+
     Parameters:
         length (float): Length of the connection.
         var_name (string): name of symbollic variable.
@@ -28,9 +28,8 @@ def translation(length: float, var_name: str):
 
     """
     x = dynamicsymbols(var_name)
-    l = length + x
 
-    return x, l
+    return x
 
 #####################
 # Rotational Motion #
@@ -38,7 +37,7 @@ def translation(length: float, var_name: str):
 
 def rotation(length: float, var_name: str):
     """This function creates the expressions of motions of a body.
-    
+
     Parameters:
         length (float): Length of the connection.
         var_name (string): name of symbollic variable.
@@ -48,10 +47,10 @@ def rotation(length: float, var_name: str):
         y (Symbol): Generalised expression of motion in y-axis.
         theta (Symbol): Symbollic variable.
     """
-    x = dynamicsymbols(var_name)
+    theta = dynamicsymbols(var_name)
 
     # Resolve vector motion
-    y = sp.sqrt(length**2 - x**2)
-    theta = sp.atan(x/y)
+    x = length * sp.sin(theta)
+    y = - length * sp.cos(theta)
 
-    return x, y, theta
+    return x, y

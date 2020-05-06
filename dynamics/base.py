@@ -3,12 +3,11 @@ dynamics simulations. This module contains a class `dynamics.base.Simulation`
 to store simulation model, components and solver; and a virtual class
 `dynamics.base.Results` for the results of the simulation. """
 
+from functools import partial
 import sys
 
-from functools import partial
-
-from dynamics.helper import SimulationParametersNotDefinedError
 from dynamics.tools.solver import euler
+from utils import DynamicsError, SimulationParametersNotDefinedError
 
 class Simulation:
     """A simulation class for nonlinear dynamics that contains model, solver
@@ -75,11 +74,15 @@ class Simulation:
                     """Please use set_parameters method to set parameters before
                     running the simulation."""
                 )
+        elif hasattr(self, 'model'):
+            raise DynamicsError("Missing model!! Please register model.")
+        elif hasattr(self, 'solver'):
+            raise DynamicsError("Missing solver!!! Please register solver.")
 
         self.model.initialise(time_step=self.time_step, time_start=self.time_start,
                               n_iter=self.n_iter)
         self.model.solve(self.solver)
-        self.results = self.model.solution[0]
+        self.results = self.model.asset[0].results
 
     def set_paramters(self, time_step: float = 1e-3,
                       time_start: float = 0.0, time_end: float = 2.0):
