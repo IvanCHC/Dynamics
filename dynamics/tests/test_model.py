@@ -5,7 +5,6 @@ Unit test for model.py.
 from unittest import TestCase
 from unittest.mock import Mock, patch
 
-import sympy as sp
 from sympy.physics.vector import dynamicsymbols
 
 from dynamics.model import Model

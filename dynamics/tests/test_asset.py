@@ -3,7 +3,6 @@ Unit test for model.py.
 """
 
 from unittest import TestCase
-from unittest.mock import Mock, patch
 
 from dynamics.asset import Asset
 
