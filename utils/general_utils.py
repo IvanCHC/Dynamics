@@ -4,6 +4,3 @@ def isempty(any_structure):
         return False
     else:
         return True
-
-class SimulationParametersNotDefinedError(Exception):
-    pass

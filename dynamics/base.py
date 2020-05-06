@@ -6,8 +6,8 @@ to store simulation model, components and solver; and a virtual class
 from functools import partial
 import sys
 
-from dynamics.helper import SimulationParametersNotDefinedError
 from dynamics.tools.solver import euler
+from utils import SimulationParametersNotDefinedError
 
 class Simulation:
     """A simulation class for nonlinear dynamics that contains model, solver
