@@ -1,4 +1,4 @@
-"""The module `dynamics.model` creates the dynamic model for the system 
+"""The module `dynamics.model` creates the dynamic model for the system
 defined."""
 
 from functools import reduce
@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, List
 
 import sympy as sp
 from sympy.physics.vector import dynamicsymbols
+from tqdm import tqdm
 
 from dynamics.tools import kinectic, potentialGrav
 
@@ -14,13 +15,13 @@ if TYPE_CHECKING:
 
 class Model:
     """A model class for evaluating the expression of motions of the system.
-    The model object contains a list of tuples describing the motion of the
+    The model object contains a list of Asset describing the motion of the
     system.
     """
 
     def __init__(self, asset: List['Asset']):
         self.asset = [asset] if not isinstance(asset, list) else asset
-        
+
         self.direction_grav = (0, 1)
         self.time_start = 0.0
         self.time_step = 1e-3
@@ -36,13 +37,13 @@ class Model:
             self.direction_grav = (0, 1)
         else:
             self.direction_grav = direction_grav
-        
+
         if time_start is not None:
             self.time_start = time_start
 
         if time_step is not None:
             self.time_step = time_step
-        
+
         if n_iter is not None:
             self.n_iter = n_iter
 
@@ -78,7 +79,7 @@ class Model:
             acceleration[i] = sp.simplify(acceleration[i])
 
         return acceleration
-    
+
     def solve(self, solver):
         """Solve the model using the given solver and direct numerical method, the system of
         equations are considered as `[M] x [A] = [R]`, where [M] is the mass equalavent
@@ -118,7 +119,6 @@ class Model:
         acc_matrix = mass_matrix*react_matrix
         acc_matrix = sp.simplify(acc_matrix)
 
-        from tqdm import tqdm
         for i in tqdm(range(self.n_iter)):
             for j, acc in enumerate(acc_matrix):
                 dx_sym = [x for k,x in enumerate(dis_symbols) if k!=j]
@@ -133,11 +133,11 @@ class Model:
                 self.asset[j].solution.displacement.append(s[j])
                 self.asset[j].solution.velocity.append(v[j])
                 self.asset[j].solution.time.append(time)
-            
+
             t = time
 
     def _kinectic_energy(self):
-        """Evaluate the kinetic energy term of the accelerationgian."""
+        """Evaluate the kinetic energy term of the Lagrangian."""
         T = []
         for _, asset in enumerate(self.asset):
             for i, motion in enumerate(asset.motion):
@@ -145,7 +145,7 @@ class Model:
                     motion = motion + asset.connection.motion[i]
                 velo = self._time_derivative(motion)
                 T.append(kinectic(asset.component.mass, velo))
-        
+
         T = reduce((lambda x, y: x + y), T)
         T = sp.simplify(T)
 
@@ -177,7 +177,7 @@ class Model:
 
     def _time_derivative(self, expre):
         """Evaluate the time derivative of the symbolic expression.
-        
+
         Parameters:
             expre (Symbol): Symbolic expression.
 
