@@ -52,6 +52,6 @@ def rotation(length: float, var_name: str):
 
     # # Resolve vector motion
     x = length * sp.sin(theta)
-    y = length - length * sp.cos(theta)
+    y = - length * sp.cos(theta)
 
     return x, y #, theta

@@ -46,7 +46,7 @@ class Model:
         if n_iter is not None:
             self.n_iter = n_iter
 
-    def lagrangian(self):
+    def acceleration(self):
         """Evaluate the model of sytem of motion equations."""
 
         T = self._kinectic_energy()
@@ -55,7 +55,7 @@ class Model:
         L = T - V
         L = sp.simplify(L)
 
-        lagrangian = []
+        acceleration = []
         variables = []
         for _, asset in enumerate(self.asset):
             var_name = asset.var_name
@@ -65,46 +65,79 @@ class Model:
             dL_dx = sp.diff(L , dynamicsymbols(var_name)).doit()
             dL_dx_dot_dt = self._time_derivative(sp.diff(L , dynamicsymbols(var_name+"dot")))
 
-            expression = dL_dx - dL_dx_dot_dt
+            expression = dL_dx_dot_dt - dL_dx
             expression = sp.simplify(expression)
-            lagrangian.append(expression)
+            acceleration.append(expression)
             variables.append([var_name, x_dot, x_ddot])
 
-        for i, lagran in enumerate(lagrangian):
+        for i, accel in enumerate(acceleration):
             for j, variable in enumerate(variables):
-                lagran = lagran.subs(variable[1], dynamicsymbols(variable[0]+"dot"))
-                lagran = lagran.subs(variable[2], dynamicsymbols(variable[0]+"ddot"))
-                lagrangian[i] = lagran
-            lagrangian[i] = sp.simplify(lagrangian[i])
+                accel = accel.subs(variable[1], dynamicsymbols(variable[0]+"dot"))
+                accel = accel.subs(variable[2], dynamicsymbols(variable[0]+"ddot"))
+                acceleration[i] = accel
+            acceleration[i] = sp.simplify(acceleration[i])
 
-        return lagrangian
+        return acceleration
     
     def solve(self, solver):
-        """Solve the model using the given solver."""
-        expre = self.lagrangian()
+        """Solve the model using the given solver and direct numerical method, the system of
+        equations are considered as `[M] x [A] = [R]`, where [M] is the mass equalavent
+        matrix and [R] is the reaction equalavent matrix. Hence, acceleration can be solved
+        by [A] = inv([M]) x [R]."""
+        expre = self.acceleration()
 
+        var_names = []
+        acc_symbols = []
+        vel_symbols = []
+        dis_symbols = []
+        s = []
+        v = []
+        t = self.time_start
         for i, asset in enumerate(self.asset):
-            var_name = asset.var_name
-            mass_equ = expre[i].coeff(dynamicsymbols(var_name+'ddot'))
-            react_equ = sp.simplify(-expre[i].subs(dynamicsymbols(var_name+'ddot'), 0))
-            acc = sp.simplify(react_equ / mass_equ)
+            var_names.append(asset.var_name)
+            acc_symbols.append(dynamicsymbols(asset.var_name+'ddot'))
+            vel_symbols.append(dynamicsymbols(asset.var_name+'dot'))
+            dis_symbols.append(dynamicsymbols(asset.var_name))
+            x, dx, _, _ = asset.solution.initial_conditions
+            s.append(x)
+            v.append(dx)
 
-            from tqdm import tqdm
-            s, v, _, _ = asset.solution.initial_conditions
-            t = self.time_start
-            asset.solution.time = t
-            for i in tqdm(range(self.n_iter)):
-                s, v, t = solver(acc, s, v, t, dynamicsymbols(var_name),
-                                dynamicsymbols(var_name+'dot'), self.time_step)
+        mass_matrix = []
+        react_matrix = []
+        for _, accel_expre in enumerate(expre):
+            mass_row = []
+            react_row = accel_expre
+            for _, acc_symbol in enumerate(acc_symbols):
+                mass_row.append(accel_expre.coeff(acc_symbol))
+                react_row = sp.simplify(react_row.subs(acc_symbol, 0))
+            mass_matrix.append(mass_row)
+            react_matrix.append(react_row)
+        mass_matrix = sp.Matrix(mass_matrix).inv()
+        react_matrix = sp.Matrix(react_matrix)
 
-                s, v, t = s, v.evalf(), t            
+        acc_matrix = mass_matrix*react_matrix
+        acc_matrix = sp.simplify(acc_matrix)
 
-                asset.solution.displacement.append(s)
-                asset.solution.velocity.append(v)
-                asset.solution.time.append(t)
+        from tqdm import tqdm
+        for i in tqdm(range(self.n_iter)):
+            for j, acc in enumerate(acc_matrix):
+                dx_sym = [x for k,x in enumerate(dis_symbols) if k!=j]
+                dxdot_sym = [x for k,x in enumerate(vel_symbols) if k!=j]
+                for k in range(len(dx_sym)):
+                    accel = acc.subs({dx_sym[k]: s[k], dxdot_sym[k]: v[k]})
+                if len(dx_sym) == 0:
+                    accel = acc
+                s[j], v[j], time = solver(accel, s[j], v[j], t, dis_symbols[j],
+                                          vel_symbols[j], self.time_step)
+                s[j], v[j] = s[j].evalf(), v[j].evalf()
+                self.asset[j].solution.displacement.append(s[j])
+                self.asset[j].solution.velocity.append(v[j])
+                self.asset[j].solution.time.append(time)
+            
+            t = time
 
     def _kinectic_energy(self):
-        """Evaluate the kinetic energy term of the Lagrangian."""
+        """Evaluate the kinetic energy term of the accelerationgian."""
         T = []
         for _, asset in enumerate(self.asset):
             for i, motion in enumerate(asset.motion):
@@ -133,7 +166,7 @@ class Model:
             for j, motion in enumerate(asset.motion):
                 if asset.connection is not None:
                     motion = motion + asset.connection.motion[j]
-                disp = (motion) * direction_grav[j]
+                disp = - (motion) * direction_grav[j]
                 V.append(potentialGrav(asset.component.mass, disp))
             del disp
 
