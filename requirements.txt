@@ -1,14 +1,12 @@
 # Numerical and symbolic packages
 numpy
+pandas
 scipy
 sympy
 matplotlib
 
 # Interface packages
 tqdm
-# pyqt5 == 5.12
-# pyqtgraph
-# PyOpenGL
 
 # Unittest packages
 nose
