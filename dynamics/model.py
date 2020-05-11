@@ -47,8 +47,8 @@ class Model:
         if n_iter is not None:
             self.n_iter = n_iter
 
-    def acceleration(self):
-        """Evaluate the model of sytem of motion equations."""
+    def lagrangian(self):
+        """Evaluate the lagrangian of the model."""
 
         T = self._kinectic_energy()
         V = self._potential_energy()
@@ -56,7 +56,14 @@ class Model:
         L = T - V
         L = sp.simplify(L)
 
-        acceleration = []
+        return L
+
+    def acceleration(self):
+        """Evaluate the model of sytem of motion equations."""
+
+        L = self.lagrangian()
+
+        equations = []
         variables = []
         for _, asset in enumerate(self.asset):
             var_name = asset.var_name
@@ -68,17 +75,17 @@ class Model:
 
             expression = dL_dx_dot_dt - dL_dx
             expression = sp.simplify(expression)
-            acceleration.append(expression)
+            equations.append(expression)
             variables.append([var_name, x_dot, x_ddot])
 
-        for i, accel in enumerate(acceleration):
+        for i, accel in enumerate(equations):
             for j, variable in enumerate(variables):
                 accel = accel.subs(variable[1], dynamicsymbols(variable[0]+"dot"))
                 accel = accel.subs(variable[2], dynamicsymbols(variable[0]+"ddot"))
-                acceleration[i] = accel
-            acceleration[i] = sp.simplify(acceleration[i])
+                equations[i] = accel
+            equations[i] = sp.simplify(equations[i])
 
-        return acceleration
+        return equations
 
     def solve(self, solver):
         """Solve the model using the given solver and direct numerical method, the system of
