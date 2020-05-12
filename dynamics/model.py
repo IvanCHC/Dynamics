@@ -4,11 +4,12 @@ defined."""
 from functools import reduce
 from typing import TYPE_CHECKING, List
 
+import pandas as pd
 import sympy as sp
 from sympy.physics.vector import dynamicsymbols
 from tqdm import tqdm
 
-from dynamics.tools import kinectic, potentialGrav
+from dynamics.tools import kinectic, potentialGrav, dissipated
 
 if TYPE_CHECKING:
     from dynamics.asset import Asset
@@ -47,8 +48,8 @@ class Model:
         if n_iter is not None:
             self.n_iter = n_iter
 
-    def acceleration(self):
-        """Evaluate the model of sytem of motion equations."""
+    def lagrangian(self):
+        """Evaluate the lagrangian of the model."""
 
         T = self._kinectic_energy()
         V = self._potential_energy()
@@ -56,7 +57,15 @@ class Model:
         L = T - V
         L = sp.simplify(L)
 
-        acceleration = []
+        return L
+
+    def acceleration(self):
+        """Evaluate the model of sytem of motion equations."""
+
+        L = self.lagrangian()
+        D = self._dissipation()
+
+        equations = []
         variables = []
         for _, asset in enumerate(self.asset):
             var_name = asset.var_name
@@ -65,20 +74,21 @@ class Model:
 
             dL_dx = sp.diff(L , dynamicsymbols(var_name)).doit()
             dL_dx_dot_dt = self._time_derivative(sp.diff(L , dynamicsymbols(var_name+"dot")))
+            dD_dx_dot = sp.diff(D , dynamicsymbols(var_name+"dot")).doit()
 
-            expression = dL_dx_dot_dt - dL_dx
+            expression = dL_dx_dot_dt - dL_dx - dD_dx_dot
             expression = sp.simplify(expression)
-            acceleration.append(expression)
+            equations.append(expression)
             variables.append([var_name, x_dot, x_ddot])
 
-        for i, accel in enumerate(acceleration):
+        for i, accel in enumerate(equations):
             for j, variable in enumerate(variables):
                 accel = accel.subs(variable[1], dynamicsymbols(variable[0]+"dot"))
                 accel = accel.subs(variable[2], dynamicsymbols(variable[0]+"ddot"))
-                acceleration[i] = accel
-            acceleration[i] = sp.simplify(acceleration[i])
+                equations[i] = accel
+            equations[i] = sp.simplify(equations[i])
 
-        return acceleration
+        return equations
 
     def solve(self, solver):
         """Solve the model using the given solver and direct numerical method, the system of
@@ -127,14 +137,30 @@ class Model:
                     accel = acc.subs({dx_sym[k]: s[k], dxdot_sym[k]: v[k]})
                 if len(dx_sym) == 0:
                     accel = acc
-                s[j], v[j], time = solver(accel, s[j], v[j], t, dis_symbols[j],
-                                          vel_symbols[j], self.time_step)
+                s[j], v[j], a, time = solver(accel, s[j], v[j], t,
+                                             dis_symbols[j], vel_symbols[j],
+                                             self.time_step)
                 s[j], v[j] = s[j].evalf(), v[j].evalf()
                 self.asset[j].solution.displacement.append(s[j])
                 self.asset[j].solution.velocity.append(v[j])
+                self.asset[j].solution.acceleration.append(a)
                 self.asset[j].solution.time.append(time)
+                
+                if i == 0:
+                    self.asset[j].solution.acceleration[0] = a
 
             t = time
+
+    def get_results(self):
+        """Get results from the assets."""
+        results = None
+        for i, asset in enumerate(self.asset):
+            if i == 0:
+                results_df = asset.results
+            if i != 0:
+                data = asset.results
+                results_df = pd.concat([results_df, data])
+        return results_df
 
     def _kinectic_energy(self):
         """Evaluate the kinetic energy term of the Lagrangian."""
@@ -174,6 +200,28 @@ class Model:
         V = sp.simplify(V)
 
         return V
+
+    def _dissipation(self):
+        """Evaluate the Rayleigh dissipation term."""
+        D = []
+        for _, asset in enumerate(self.asset):
+            for i, motion in enumerate(asset.motion):
+                if asset.connection is not None:
+                    motion = motion + asset.connection.motion[i]
+                velo = self._time_derivative(motion)
+                D.append(dissipated(asset.component.drag_coeff, velo))
+
+        D = reduce((lambda x, y: x + y), D)
+        D = sp.simplify(D)
+
+        for _, asset in enumerate(self.asset):
+            var_name = asset.var_name
+            var_dot_exper = self._time_derivative(dynamicsymbols(var_name))
+            D = D.subs(var_dot_exper, dynamicsymbols(var_name+'dot'))
+
+        D = sp.simplify(D)
+
+        return D            
 
     def _time_derivative(self, expre):
         """Evaluate the time derivative of the symbolic expression.

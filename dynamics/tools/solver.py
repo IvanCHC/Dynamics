@@ -15,14 +15,17 @@ Parameters
 
 def euler(f, s0, v0, t0, s_sym, v_sym, dt):
     """Numerical integrator using euler's method."""
+    a = f.subs(s_sym, s0).subs(v_sym, v0)
     v = v0 + f.subs(s_sym, s0).subs(v_sym, v0) * dt
     s = s0 + v0 * dt
     t = t0 + dt
 
-    return s, v, t
+    return s, v, a, t
 
 def improved_euler(f, s0, v0, t0, s_sym, v_sym, dt):
     """Numerical integrator using improved euler's method."""
+    a = f.subs(s_sym, s0).subs(v_sym, v0)
+
     k1_v = f.subs(s_sym, s0).subs(v_sym, v0) * dt
     k1_s = v0 * dt
 
@@ -33,10 +36,12 @@ def improved_euler(f, s0, v0, t0, s_sym, v_sym, dt):
     v = v0 + (k1_v + k2_v)/2
     t = t0 + dt
 
-    return s, v, t
+    return s, v, a, t
 
 def RK2(f, s0, v0, t0, s_sym, v_sym, dt):
     """Numerical integrator using RK2."""
+    a = f.subs(s_sym, s0).subs(v_sym, v0)
+
     k1_v = f.subs(s_sym, s0).subs(v_sym, v0) * dt
     k1_s = v0 * dt
 
@@ -47,10 +52,12 @@ def RK2(f, s0, v0, t0, s_sym, v_sym, dt):
     v = v0 + k2_v + dt**3
     t = t0 + dt
 
-    return s, v, t
+    return s, v, a, t
 
 def RK4(f, s0, v0, t0, s_sym, v_sym, dt):
     """Numerical integrator using RK4."""
+    a = f.subs(s_sym, s0).subs(v_sym, v0)
+
     k1_v = f.subs(s_sym, s0).subs(v_sym, v0) * dt
     k1_s = v0 * dt
 
@@ -67,4 +74,4 @@ def RK4(f, s0, v0, t0, s_sym, v_sym, dt):
     v = v0 + (k1_v + 2*k2_v + 2*k3_v + k4_v)/6 + dt**5
     t = t0 + dt
 
-    return s, v, t
+    return s, v, a, t
