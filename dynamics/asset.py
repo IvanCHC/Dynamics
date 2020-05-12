@@ -32,11 +32,17 @@ class Asset:
         x_func = sp.lambdify(dynamicsymbols(self.var_name), x_sym, 'numpy')
         y_func = sp.lambdify(dynamicsymbols(self.var_name), y_sym, 'numpy')
 
-        # results_dataframe = pd.Dataframe()
-        result_dict = {}
-        result_dict['x'] = x_func(np.array(self.solution.displacement, dtype=np.float64))
-        result_dict['y'] = y_func(np.array(self.solution.displacement, dtype=np.float64))
-        result_dict[self.var_name] = self.solution.displacement
-        result_dict[self.var_name+'dot'] = self.solution.velocity
-        result_dict['time'] = self.solution.time
-        return result_dict
+        n_data_points = len(self.solution.time)
+
+        data = {
+            'asset': [self.name] * n_data_points,
+            'variable': [self.var_name] * n_data_points,
+            'time': self.solution.time,
+            'displacement': self.solution.displacement,
+            'velocity': self.solution.velocity,
+            'acceleration': self.solution.acceleration,
+            'x': x_func(np.array(self.solution.displacement, dtype=np.float64)),
+            'y': y_func(np.array(self.solution.displacement, dtype=np.float64)),
+        }
+
+        return pd.DataFrame(data=data)
