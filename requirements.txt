@@ -1,0 +1,12 @@
+# Numerical and symbolic packages
+numpy
+pandas
+scipy
+sympy
+matplotlib
+
+# Interface packages
+tqdm
+
+# Unittest packages
+nose
