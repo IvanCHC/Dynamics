@@ -134,12 +134,17 @@ class Model:
                     accel = acc.subs({dx_sym[k]: s[k], dxdot_sym[k]: v[k]})
                 if len(dx_sym) == 0:
                     accel = acc
-                s[j], v[j], time = solver(accel, s[j], v[j], t, dis_symbols[j],
-                                          vel_symbols[j], self.time_step)
+                s[j], v[j], a, time = solver(accel, s[j], v[j], t,
+                                             dis_symbols[j], vel_symbols[j],
+                                             self.time_step)
                 s[j], v[j] = s[j].evalf(), v[j].evalf()
                 self.asset[j].solution.displacement.append(s[j])
                 self.asset[j].solution.velocity.append(v[j])
+                self.asset[j].solution.acceleration.append(a)
                 self.asset[j].solution.time.append(time)
+                
+                if i == 0:
+                    self.asset[j].solution.acceleration[0] = a
 
             t = time
 
