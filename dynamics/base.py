@@ -74,9 +74,9 @@ class Simulation:
                     """Please use set_parameters method to set parameters before
                     running the simulation."""
                 )
-        elif not hasattr(self, 'model'):
+        elif self.model is None:
             raise DynamicsError("Missing model!! Please register model.")
-        elif not hasattr(self, 'solver'):
+        elif self.solver is None:
             raise DynamicsError("Missing solver!!! Please register solver.")
 
         self.model.initialise(time_step=self.time_step, time_start=self.time_start,

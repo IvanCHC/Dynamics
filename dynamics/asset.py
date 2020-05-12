@@ -32,7 +32,7 @@ class Asset:
         x_func = sp.lambdify(dynamicsymbols(self.var_name), x_sym, 'numpy')
         y_func = sp.lambdify(dynamicsymbols(self.var_name), y_sym, 'numpy')
 
-        results_dataframe = pd.Dataframe()
+        # results_dataframe = pd.Dataframe()
         result_dict = {}
         result_dict['x'] = x_func(np.array(self.solution.displacement, dtype=np.float64))
         result_dict['y'] = y_func(np.array(self.solution.displacement, dtype=np.float64))

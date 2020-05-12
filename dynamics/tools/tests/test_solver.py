@@ -26,25 +26,25 @@ class TestSolver(TestCase):
         solution = solver.euler(
             self.f, self.s0, self.v0, self.t0, self.s_sym, self.v_sym, self.dt
         )
-        self.assertTupleEqual(solution, (4, 8, 1))
+        self.assertTupleEqual(solution, (4, 8, 6, 1))
 
     def test_improved_euler(self):
         solution = solver.improved_euler(
             self.f, self.s0, self.v0, self.t0, self.s_sym, self.v_sym, self.dt
         )
-        self.assertTupleEqual(solution, (7, 39, 1))
+        self.assertTupleEqual(solution, (7, 39, 6, 1))
 
     def test_RK2(self):
         solution = solver.RK2(
             self.f, self.s0, self.v0, self.t0, self.s_sym, self.v_sym, self.dt
         )
-        self.assertTupleEqual(solution, (8, 31, 1))
+        self.assertTupleEqual(solution, (8, 31, 6, 1))
 
     def test_RK4(self):
         solution = solver.RK4(
             self.f, self.s0, self.v0, self.t0, self.s_sym, self.v_sym, self.dt
         )
-        np.testing.assert_array_almost_equal(solution, (54.083, 11587.542, 1), 3)
+        np.testing.assert_array_almost_equal(solution, (54.083, 11587.542, 6, 1), 3)
 
 if __name__ == '__main__':
     from utils.test_utils import run_test

@@ -49,7 +49,6 @@ class TestSimulation(TestCase):
         self.simulation.set_paramters(
             time_step=1e-3, time_start=0.0, time_end=1.0
         )
-        self.simulation.register('solver', Mock())
         with self.assertRaises(DynamicsError): self.simulation.run()
 
     def test_run_3(self):
@@ -57,7 +56,6 @@ class TestSimulation(TestCase):
         self.simulation.set_paramters(
             time_step=1e-3, time_start=0.0, time_end=1.0
         )
-        self.simulation.register('model', Mock())
         with self.assertRaises(DynamicsError): self.simulation.run()
 
     def test_set_parameters(self):
