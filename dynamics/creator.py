@@ -29,7 +29,6 @@ def create(name, base, **kwargs):
         else:
             dict_cls[key] = value
 
-    # Check if the base class has to be replaced
     if base in class_replacers:
         base = class_replacers[base]
 
