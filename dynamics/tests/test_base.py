@@ -3,10 +3,10 @@ Unit test for base.py.
 """
 
 from unittest import TestCase
+import unittest
 from unittest.mock import Mock
 
 from dynamics.base import Simulation
-from utils import DynamicsError, SimulationParametersNotDefinedError
 
 class TestSimulation(TestCase):
     """Unit test for class Simulation."""
@@ -41,7 +41,7 @@ class TestSimulation(TestCase):
     def test_run_1(self):
         """Test method run for the running the simulation, without setting
         the parameters."""
-        with self.assertRaises(SimulationParametersNotDefinedError): \
+        with self.assertRaises(RuntimeError): \
             self.simulation.run()
     
     def test_run_2(self):
@@ -49,14 +49,14 @@ class TestSimulation(TestCase):
         self.simulation.set_paramters(
             time_step=1e-3, time_start=0.0, time_end=1.0
         )
-        with self.assertRaises(DynamicsError): self.simulation.run()
+        with self.assertRaises(RuntimeError): self.simulation.run()
 
     def test_run_3(self):
         """Test method run for simulation error handling, without solver."""
         self.simulation.set_paramters(
             time_step=1e-3, time_start=0.0, time_end=1.0
         )
-        with self.assertRaises(DynamicsError): self.simulation.run()
+        with self.assertRaises(RuntimeError): self.simulation.run()
 
     def test_set_parameters(self):
         """Test method set_parameters for setting up simulation parameters."""
@@ -69,6 +69,4 @@ class TestSimulation(TestCase):
 
 
 if __name__ == '__main__':
-    from utils.test_utils import run_test
-    TEST_CLASSES = [TestSimulation]
-    run_test(TEST_CLASSES)
+    unittest.main()

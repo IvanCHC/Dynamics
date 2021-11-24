@@ -4,10 +4,8 @@ to store simulation model, components and solver; and a virtual class
 `dynamics.base.Results` for the results of the simulation. """
 
 from functools import partial
-import sys
 
 from dynamics.tools.solver import euler
-from utils import DynamicsError, SimulationParametersNotDefinedError
 
 class Simulation:
     """A simulation class for nonlinear dynamics that contains model, solver
@@ -70,14 +68,14 @@ class Simulation:
         """Run the simulation for the given model and solver, the results are store
         in attribute `results`."""
         if self._parameters == False:
-            raise SimulationParametersNotDefinedError(
+            raise RuntimeError(
                     """Please use set_parameters method to set parameters before
                     running the simulation."""
                 )
         elif self.model is None:
-            raise DynamicsError("Missing model!! Please register model.")
+            raise RuntimeError("Missing model!! Please register model.")
         elif self.solver is None:
-            raise DynamicsError("Missing solver!!! Please register solver.")
+            raise RuntimeError("Missing solver!!! Please register solver.")
 
         self.model.initialise(time_step=self.time_step, time_start=self.time_start,
                               n_iter=self.n_iter)
