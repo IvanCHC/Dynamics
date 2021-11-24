@@ -2,8 +2,6 @@
 for nonlinear dynamics simulation. 
 """
 
-import array
-import copy
 import warnings
 
 class_replacers = {}
