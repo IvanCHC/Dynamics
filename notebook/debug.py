@@ -24,7 +24,7 @@ sol = solution.Solution(disp_0=3.0, velo_0=0)
 asset = Asset(**{'name': 'mass', 'var_name': 'theta', 'component': body, 'motion_func': rotation, 'solution': sol})
 
 simulation.register('model', model.Model(asset))
-simulation.register('solver', RK4)
+simulation.register('solver', euler)
 
 
 simulation.set_paramters(time_step=2.5e-3, time_end=5)

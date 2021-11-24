@@ -5,6 +5,7 @@ from functools import reduce
 from typing import TYPE_CHECKING, List
 
 import pandas as pd
+import numpy as np
 import sympy as sp
 from sympy.physics.vector import dynamicsymbols
 from tqdm import tqdm
@@ -112,6 +113,8 @@ class Model:
             x, dx, _, _ = asset.solution.initial_conditions
             s.append(x)
             v.append(dx)
+        s = np.array(s, dtype=np.float64)
+        v = np.array(v, dtype=np.float64)
 
         mass_matrix = []
         react_matrix = []
@@ -129,26 +132,28 @@ class Model:
         acc_matrix = mass_matrix*react_matrix
         acc_matrix = sp.simplify(acc_matrix)
 
+        acc_matrix_lamb = [sp.lambdify([dis_symbols, vel_symbols], acc_express) for acc_express in acc_matrix]
+
         for i in tqdm(range(self.n_iter)):
-            for j, acc in enumerate(acc_matrix):
-                dx_sym = [x for k,x in enumerate(dis_symbols) if k!=j]
-                dxdot_sym = [x for k,x in enumerate(vel_symbols) if k!=j]
-                for k in range(len(dx_sym)):
-                    accel = acc.subs({dx_sym[k]: s[k], dxdot_sym[k]: v[k]})
-                if len(dx_sym) == 0:
-                    accel = acc
-                s[j], v[j], a, time = solver(accel, s[j], v[j], t,
-                                             dis_symbols[j], vel_symbols[j],
-                                             self.time_step)
-                s[j], v[j] = s[j].evalf(), v[j].evalf()
-                self.asset[j].solution.displacement.append(s[j])
-                self.asset[j].solution.velocity.append(v[j])
+            for j, acc in enumerate(acc_matrix_lamb):
+                # dx_sym = [x for k,x in enumerate(dis_symbols) if k!=j]
+                # dxdot_sym = [x for k,x in enumerate(vel_symbols) if k!=j]
+                # for k in range(len(dx_sym)):
+                    # accel = acc.subs({dx_sym[k]: s[k], dxdot_sym[k]: v[k]})
+                # if len(dx_sym) == 0:
+                    # accel = acc
+                s_temp, v_temp, a, time = solver(acc, s, v, t, self.time_step, j)
+                # s[j], v[j] = s[j].evalf(), v[j].evalf()
+                self.asset[j].solution.displacement.append(s_temp)
+                self.asset[j].solution.velocity.append(v_temp)
                 self.asset[j].solution.acceleration.append(a)
                 self.asset[j].solution.time.append(time)
                 
                 if i == 0:
                     self.asset[j].solution.acceleration[0] = a
 
+                v[j] = v_temp
+                s[j] = s_temp
             t = time
 
     def get_results(self):
