@@ -1,9 +1,9 @@
-from dynamics import base, creator, model
+from dynamics import core, creator, model
 from dynamics.asset import Asset
 from dynamics.tools import Body, kinectic, potentialGrav, rotation, solution
 from dynamics.tools.solver import euler, improved_euler, RK2, RK4
 
-simulation = base.Simulation()
+simulation = core.Simulation()
 
 
 # Double Pen
@@ -27,7 +27,7 @@ simulation.register('model', model.Model(asset))
 simulation.register('solver', RK4)
 
 
-simulation.set_paramters(time_step=2.5e-3, time_end=0.025)
+simulation.set_paramters(time_step=2.5e-3, time_end=5)
 # simulation.set_paramters(time_step=75e-3, time_end=10)
 simulation.run()
 
