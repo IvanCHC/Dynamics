@@ -9,22 +9,19 @@ from dynamics.tools.solver import euler
 
 class Simulation:
     """A simulation class for nonlinear dynamics that contains model, solver
-    and componets. At first the simulation object contains a method
-    `dynamics.Simulation.map` method that applies the function to every items
-    of the iterables.
+    and componets.
 
     Users can extend the simulation class with any other function by using
     the method `dynamics.base.Simulation.register`.
     """
 
-    def __init__(self):
-        self.register("map", map)
+    def __init__(self) -> None:
         self.register("model", None)
         self.register("solver", euler)
         self.register("results", None)
         self.register("_parameters", False)
 
-    def register(self, alias, function, *args, **kwargs):
+    def register(self, alias, function, *args, **kwargs) -> None:
         """Register (/extend) the given *function* in the simulation object under
         the given name *alias*.
 
@@ -56,7 +53,7 @@ class Simulation:
         else:
             setattr(self, alias, function)
 
-    def unregister(self, alias):
+    def unregister(self, alias) -> None:
         """Decouple (/remove) alias and function from the simulation.
 
         Parameters:
@@ -64,7 +61,7 @@ class Simulation:
         """
         delattr(self, alias)
 
-    def run(self):
+    def run(self) -> None:
         """Run the simulation for the given model and solver, the results are store
         in attribute `results`."""
         if self._parameters == False:
@@ -82,8 +79,12 @@ class Simulation:
         self.model.solve(self.solver)
         self.results = self.model.get_results()
 
+    def reset(self) -> None:
+        """Reset the simulation results a attribute."""
+        self.results = None
+
     def set_paramters(self, time_step: float = 1e-3,
-                      time_start: float = 0.0, time_end: float = 2.0):
+                      time_start: float = 0.0, time_end: float = 2.0) -> None:
         """Set the simulation parameters."""
         self.time_step, self.time_start, self.time_end = time_step, time_start, time_end
         self.n_iter = int((time_end - time_start) / time_step)
