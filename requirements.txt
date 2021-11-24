@@ -4,6 +4,8 @@ pandas
 scipy
 sympy
 matplotlib
+cupy-cuda115
+numba
 
 # Interface packages
 tqdm
