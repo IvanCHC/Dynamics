@@ -6,7 +6,7 @@ from unittest import TestCase
 import unittest
 from unittest.mock import Mock
 
-from dynamics.base import Simulation
+from dynamics.core import Simulation
 
 class TestSimulation(TestCase):
     """Unit test for class Simulation."""
