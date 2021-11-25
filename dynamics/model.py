@@ -68,7 +68,7 @@ class Model:
 
         equations = []
         variables = []
-        for _, asset in enumerate(self.asset):
+        for asset in self.asset:
             var_name = asset.var_name
             x_dot = self._time_derivative(dynamicsymbols(var_name))
             x_ddot = sp.Derivative(dynamicsymbols(var_name+'dot'), sp.Symbol('t'))
@@ -83,7 +83,7 @@ class Model:
             variables.append([var_name, x_dot, x_ddot])
 
         for i, accel in enumerate(equations):
-            for j, variable in enumerate(variables):
+            for variable in variables:
                 accel = accel.subs(variable[1], dynamicsymbols(variable[0]+"dot"))
                 accel = accel.subs(variable[2], dynamicsymbols(variable[0]+"ddot"))
                 equations[i] = accel
@@ -105,7 +105,7 @@ class Model:
         s = []
         v = []
         t = self.time_start
-        for i, asset in enumerate(self.asset):
+        for asset in self.asset:
             var_names.append(asset.var_name)
             acc_symbols.append(dynamicsymbols(asset.var_name+'ddot'))
             vel_symbols.append(dynamicsymbols(asset.var_name+'dot'))
@@ -118,10 +118,10 @@ class Model:
 
         mass_matrix = []
         react_matrix = []
-        for _, accel_expre in enumerate(expre):
+        for accel_expre in expre:
             mass_row = []
             react_row = accel_expre
-            for _, acc_symbol in enumerate(acc_symbols):
+            for acc_symbol in acc_symbols:
                 mass_row.append(accel_expre.coeff(acc_symbol))
                 react_row = sp.simplify(react_row.subs(acc_symbol, 0))
             mass_matrix.append(mass_row)
@@ -132,28 +132,13 @@ class Model:
         acc_matrix = mass_matrix*react_matrix
         acc_matrix = sp.simplify(acc_matrix)
 
-        acc_matrix_lamb = [sp.lambdify([dis_symbols, vel_symbols], acc_express) for acc_express in acc_matrix]
+        acc_matrix = [sp.lambdify([dis_symbols, vel_symbols], acc) for acc in acc_matrix]
 
         for i in tqdm(range(self.n_iter)):
-            for j, acc in enumerate(acc_matrix_lamb):
-                # dx_sym = [x for k,x in enumerate(dis_symbols) if k!=j]
-                # dxdot_sym = [x for k,x in enumerate(vel_symbols) if k!=j]
-                # for k in range(len(dx_sym)):
-                    # accel = acc.subs({dx_sym[k]: s[k], dxdot_sym[k]: v[k]})
-                # if len(dx_sym) == 0:
-                    # accel = acc
-                s_temp, v_temp, a, time = solver(acc, s, v, t, self.time_step, j)
-                # s[j], v[j] = s[j].evalf(), v[j].evalf()
-                self.asset[j].solution.displacement.append(s_temp)
-                self.asset[j].solution.velocity.append(v_temp)
-                self.asset[j].solution.acceleration.append(a)
-                self.asset[j].solution.time.append(time)
-                
-                if i == 0:
-                    self.asset[j].solution.acceleration[0] = a
-
-                v[j] = v_temp
-                s[j] = s_temp
+            s, v, a, time = solver(acc_matrix, s, v, t, self.time_step)
+            self._update_asset(s, v, a, time)
+            if i == 0:
+                self._update_asset_initial_acceleration(a)
             t = time
 
     def get_results(self):
@@ -249,4 +234,14 @@ class Model:
             print('Unxpected Dynamics Error: {}').format(err)
         else:
             return deriv
+    
+    def _update_asset(self, s, v, a, t):
+        for i, asset in enumerate(self.asset):
+            asset.solution.displacement.append(s[i])
+            asset.solution.velocity.append(v[i])
+            asset.solution.acceleration.append(a[i])
+            asset.solution.time.append(t)
 
+    def _update_asset_initial_acceleration(self, a):
+        for i, asset in enumerate(self.asset):
+            asset.solution.acceleration[0] = a[i]
