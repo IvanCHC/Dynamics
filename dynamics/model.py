@@ -21,9 +21,8 @@ class Model:
     system.
     """
 
-    def __init__(self, asset: List['Asset']):
+    def __init__(self, asset: List['Asset']) -> None:
         self.asset = [asset] if not isinstance(asset, list) else asset
-
         self.direction_grav = (0, 1)
         self.time_start = 0.0
         self.time_step = 1e-3
@@ -31,38 +30,26 @@ class Model:
         self.results = None
 
     def initialise(self, direction_grav=None, time_step=None,
-                   n_iter=None, time_start=None):
+                   n_iter=None, time_start=None) -> None:
         """This class to initalise a set of prescribed
         motions based on the degree of freedom of the system. It should
         provide a way to generalise all energy methods."""
-        if direction_grav is None:
-            self.direction_grav = (0, 1)
-        else:
+        if direction_grav:
             self.direction_grav = direction_grav
+        else:
+            self.direction_grav = (0, 1)
 
-        if time_start is not None:
+        if time_start:
             self.time_start = time_start
 
-        if time_step is not None:
+        if time_step:
             self.time_step = time_step
 
-        if n_iter is not None:
+        if n_iter:
             self.n_iter = n_iter
-
-    def lagrangian(self):
-        """Evaluate the lagrangian of the model."""
-
-        T = self._kinectic_energy()
-        V = self._potential_energy()
-
-        L = T - V
-        L = sp.simplify(L)
-
-        return L
 
     def acceleration(self):
         """Evaluate the model of sytem of motion equations."""
-
         L = self.lagrangian()
         D = self._dissipation()
 
@@ -98,13 +85,8 @@ class Model:
         by [A] = inv([M]) x [R]."""
         expre = self.acceleration()
 
-        var_names = []
-        acc_symbols = []
-        vel_symbols = []
-        dis_symbols = []
-        s = []
-        v = []
-        t = self.time_start
+        var_names, acc_symbols, vel_symbols, dis_symbols = [], [], [], []
+        s, v, t = [], [], self.time_start
         for asset in self.asset:
             var_names.append(asset.var_name)
             acc_symbols.append(dynamicsymbols(asset.var_name+'ddot'))
@@ -116,8 +98,7 @@ class Model:
         s = np.array(s, dtype=np.float64)
         v = np.array(v, dtype=np.float64)
 
-        mass_matrix = []
-        react_matrix = []
+        mass_matrix, react_matrix = [], []
         for accel_expre in expre:
             mass_row = []
             react_row = accel_expre
@@ -143,7 +124,6 @@ class Model:
 
     def get_results(self):
         """Get results from the assets."""
-        results = None
         for i, asset in enumerate(self.asset):
             if i == 0:
                 results_df = asset.results
@@ -152,66 +132,64 @@ class Model:
                 results_df = pd.concat([results_df, data])
         return results_df
 
+    def lagrangian(self):
+        """Evaluate the lagrangian of the model."""
+        T = self._kinectic_energy()
+        V = self._potential_energy()
+        return sp.simplify(T - V)
+
     def _kinectic_energy(self):
         """Evaluate the kinetic energy term of the Lagrangian."""
         T = []
-        for _, asset in enumerate(self.asset):
+        for asset in self.asset:
             for i, motion in enumerate(asset.motion):
                 if asset.connection is not None:
                     motion = motion + asset.connection.motion[i]
                 velo = self._time_derivative(motion)
                 T.append(kinectic(asset.component.mass, velo))
 
-        T = reduce((lambda x, y: x + y), T)
-        T = sp.simplify(T)
+        T = sp.simplify(reduce((lambda x, y: x + y), T))
 
-        for _, asset in enumerate(self.asset):
+        for asset in self.asset:
             var_name = asset.var_name
             var_dot_exper = self._time_derivative(dynamicsymbols(var_name))
             T = T.subs(var_dot_exper, dynamicsymbols(var_name+'dot'))
 
-        T = sp.simplify(T)
-        return T
+        return sp.simplify(T)
 
     def _potential_energy(self):
         """Evaluate the kinetic energy term of the Lagrangian."""
         V = []
         direction_grav = self.direction_grav
-        for i, asset in enumerate(self.asset):
+        for asset in self.asset:
             # Gravitational potential energy
-            for j, motion in enumerate(asset.motion):
+            for i, motion in enumerate(asset.motion):
                 if asset.connection is not None:
-                    motion = motion + asset.connection.motion[j]
-                disp = - (motion) * direction_grav[j]
+                    motion = motion + asset.connection.motion[i]
+                disp = - (motion) * direction_grav[i]
                 V.append(potentialGrav(asset.component.mass, disp))
             del disp
 
-        V = reduce((lambda x, y: x + y), V)
-        V = sp.simplify(V)
-
-        return V
+        return sp.simplify(reduce((lambda x, y: x + y), V))
 
     def _dissipation(self):
         """Evaluate the Rayleigh dissipation term."""
         D = []
-        for _, asset in enumerate(self.asset):
+        for asset in self.asset:
             for i, motion in enumerate(asset.motion):
                 if asset.connection is not None:
                     motion = motion + asset.connection.motion[i]
                 velo = self._time_derivative(motion)
                 D.append(dissipated(asset.component.drag_coeff, velo))
 
-        D = reduce((lambda x, y: x + y), D)
-        D = sp.simplify(D)
+        D = sp.simplify(reduce((lambda x, y: x + y), D))
 
-        for _, asset in enumerate(self.asset):
+        for asset in self.asset:
             var_name = asset.var_name
             var_dot_exper = self._time_derivative(dynamicsymbols(var_name))
             D = D.subs(var_dot_exper, dynamicsymbols(var_name+'dot'))
 
-        D = sp.simplify(D)
-
-        return D            
+        return sp.simplify(D)
 
     def _time_derivative(self, expre):
         """Evaluate the time derivative of the symbolic expression.
