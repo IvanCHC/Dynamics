@@ -6,7 +6,7 @@ from unittest import TestCase
 import unittest
 from unittest.mock import Mock
 
-from dynamics.core import Simulation
+from dynamics.core import Simulation, SimulationParameters
 
 class TestSimulation(TestCase):
     """Unit test for class Simulation."""
@@ -64,8 +64,8 @@ class TestSimulation(TestCase):
             time_step=1e-3, time_start=0.0, time_end=1.0
         )
 
-        self.assertEqual(self.simulation.n_iter, 1000)
-        self.assertEqual(self.simulation._parameters, True)
+        self.assertEqual(self.simulation.parameters.n_iter, 1000)
+        self.assertTrue(isinstance(self.simulation.parameters, SimulationParameters))
 
 
 if __name__ == '__main__':

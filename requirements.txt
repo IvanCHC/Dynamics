@@ -7,6 +7,9 @@ matplotlib
 cupy-cuda115
 numba
 
+# Dataclass
+attrs
+
 # Interface packages
 tqdm
 
