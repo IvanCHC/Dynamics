@@ -4,8 +4,6 @@ pandas
 scipy
 sympy
 matplotlib
-cupy-cuda115
-numba
 
 # Dataclass
 attrs
